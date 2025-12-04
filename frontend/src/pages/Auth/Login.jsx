@@ -83,7 +83,7 @@ const Login = () => {
 
   return (
     <div className="login-page">
-      <div className="main-header">
+      <head className="main-header">
         <div className="header-content">
           <div className="logo-section">
             <div className="logo-placeholder">CBA</div>
@@ -93,7 +93,7 @@ const Login = () => {
             <p className="main-subtitle">Log In</p>
           </div>
         </div>
-      </div>
+      </head>
 
       <main className="login-main">
         <div className="login-container">

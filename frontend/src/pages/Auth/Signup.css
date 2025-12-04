@@ -52,14 +52,14 @@ body {
 /* Contenedor principal */
 .signup-container {
   display: flex;
-  flex-direction: column; /* Cambia de row a column */
-  justify-content: flex-start; /* Cambia de center a flex-start */
+  flex-direction: column;
+  justify-content: flex-start; /* ← Debería ser center */
   align-items: center;
   min-height: 100vh;
   padding: 0;
   background: linear-gradient(135deg, var(--light-color) 0%, var(--light-gray) 100%);
   position: relative;
-  overflow-y: auto; /* Permite desplazamiento vertical */
+  overflow-y: auto;
 }
 
 /* Tarjeta de registro */
@@ -548,7 +548,14 @@ body {
 
 /* Ajustar el contenedor principal para la barra fija */
 .signup-container {
-  padding-top: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Cambiado de flex-start a center */
+  align-items: center;
+  min-height: 100vh;
+  padding-top: 105px; /* Para compensar el header fijo */
+  background: linear-gradient(135deg, var(--light-color) 0%, var(--light-gray) 100%);
+  position: relative;
 }
 
 /* Fondo similar al WPF */
@@ -636,13 +643,11 @@ body {
 .signup-main-content {
   display: flex;
   justify-content: center;
-  align-items: flex-start; /* Cambia a flex-start */
+  align-items: center; /* Cambiado de flex-start a center */
   width: 100%;
   max-width: 100%;
-  padding: 140px var(--spacing-md) var(--spacing-xl);
-  min-height: calc(100vh - 105px); /* Resta la altura del header */
-  overflow-y: auto; /* Permite desplazamiento */
-  margin-top: 105px; /* Altura del header */
+  padding: 20px var(--spacing-md); /* Reducido el padding */
+  flex: 1; /* Para ocupar el espacio disponible */
 }
 
 .signup-card-container {
