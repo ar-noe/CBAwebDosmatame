@@ -24,8 +24,8 @@ import Schedules from './pages/Docente/Schedules';
 import DocenteProfile from './pages/Docente/DocenteProfile';
 
 // Importar componentes protegidos
-import ProtectedRoute from './components/Auth/ProtectedRoute';
-import RoleBasedRoute from './components/Auth/RoleBasedRoute';
+//import ProtectedRoute from './components/Auth/ProtectedRoute';
+//import RoleBasedRoute from './components/Auth/RoleBasedRoute';
 
 function App() {
   return (
@@ -39,9 +39,9 @@ function App() {
           {/* Rutas de Admin */}
          {/* <Route element={<ProtectedRoute />}>*/}
             <Route path="/admin" element={
-              <RoleBasedRoute allowedRoles={['admin']}>
+              /*<RoleBasedRoute allowedRoles={['admin']}>*/
                 <AdminLayout />
-              </RoleBasedRoute>
+              /*</RoleBasedRoute>*/
             }>
               <Route index element={<AdminDashboard />} />
               <Route path="dashboard" element={<AdminDashboard />} />
@@ -52,14 +52,14 @@ function App() {
               <Route path="modules" element={<MainModulosImp />} />
               <Route path="schedule/edit" element={<EditHorarios />} />
             </Route>
-          {/*</Route>
+          {/*</Route>*/}
 
           {/* Rutas de Docente */}
           {/*<Route element={<ProtectedRoute />}>*/}
             <Route path="/docente" element={
-              <RoleBasedRoute allowedRoles={['docente']}>
+              /*<RoleBasedRoute allowedRoles={['docente']}>*/
                 <DocenteLayout />
-              </RoleBasedRoute>
+              /*</RoleBasedRoute>*/
             }>
               <Route index element={<DocenteDashboard />} />
               <Route path="dashboard" element={<DocenteDashboard />} />

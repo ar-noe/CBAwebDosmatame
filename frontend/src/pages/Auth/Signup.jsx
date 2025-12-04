@@ -1,4 +1,3 @@
-// src/pages/Auth/Signup.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Signup.css';
@@ -198,7 +197,7 @@ const Signup = () => {
             <header className="signup-header">
               <div className="logo">
                 <div className="logo-icon">CBA</div>
-                <div className="logo-text">Colegio Boliviano Argentino</div>
+                <div className="logo-text">Centro Boliviano Argentino</div>
               </div>
               <h1 className="signup-title">Registro CBA</h1>
               <p className="signup-subtitle">Completa los datos para crear una cuenta</p>
