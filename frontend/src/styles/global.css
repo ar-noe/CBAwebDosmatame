@@ -1,0 +1,437 @@
+/* src/styles/global.css */
+:root {
+  /* Paleta de colores */
+  --primary-dark: #1b53a8;
+  --primary-color: #17409c;
+  --accent-color: #e485b2;
+  --danger-accent: #DC0000;
+  
+  --light-color: #f8fafc;
+  --light-gray: #b6c0e8;
+  --medium-gray: #a3afba;
+  --dark-gray: #2f1024;
+  --dark-color: #222222;
+  
+  --background-light: #7fb4e0;
+  --background-dark: #1b53a8;
+  
+  --border-radius: 12px;
+  --border-radius-sm: 8px;
+  --box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  --box-shadow-hover: 0 15px 35px rgba(0, 0, 0, 0.15);
+  
+  --spacing-xs: 8px;
+  --spacing-sm: 16px;
+  --spacing-md: 24px;
+  --spacing-lg: 32px;
+  --spacing-xl: 48px;
+}
+
+/* Reset y estilos base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, var(--light-color) 0%, var(--light-gray) 100%);
+  min-height: 100vh;
+  color: var(--dark-color);
+  overflow-x: hidden;
+}
+
+/* Header común para todas las páginas */
+.main-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+  color: white;
+  padding: 0 var(--spacing-xl);
+  height: 105px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 1200px;
+  gap: var(--spacing-md);
+}
+
+.logo-section {
+  flex-shrink: 0;
+}
+
+.logo-placeholder {
+  width: 120px;
+  height: 80px;
+  background: white;
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.title-section {
+  text-align: center;
+  flex: 1;
+}
+
+.main-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: white;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.main-subtitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-color);
+  margin: 0;
+  margin-top: 4px;
+}
+
+/* Estructura principal de páginas */
+.classroom-state-page,
+.edit-horarios-page,
+.editar-modulo-page,
+.editar-modulo-impartido-page,
+.main-classroom-page,
+.main-modulos-page,
+.schedules-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, var(--light-color) 0%, var(--background-light) 100%);
+}
+
+/* Contenido principal */
+.classroom-state-main,
+.edit-horarios-main,
+.editar-modulo-main,
+.editar-modulo-impartido-main,
+.main-classroom-content,
+.main-modulos-content,
+.schedules-content {
+  flex: 1;
+  padding: 140px var(--spacing-md) var(--spacing-xl);
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Card base */
+.card {
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.card-header {
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+  color: white;
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0;
+  margin: -var(--spacing-lg) -var(--spacing-lg) var(--spacing-lg);
+}
+
+.card-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0;
+}
+
+/* Formularios */
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.form-label {
+  font-weight: 600;
+  color: var(--dark-gray);
+  font-size: 14px;
+}
+
+.form-select,
+.form-input,
+.form-textarea {
+  padding: 12px 16px;
+  border: 2px solid var(--light-gray);
+  border-radius: var(--border-radius-sm);
+  font-size: 16px;
+  transition: all 0.2s ease;
+  background: var(--light-color);
+  color: var(--dark-color);
+}
+
+.form-select:focus,
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(27, 83, 168, 0.1);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Botones */
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--light-gray);
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 12px 30px;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 140px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, var(--accent-color), #d870a3);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(90deg, #d870a3, #c95d94);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(228, 133, 178, 0.3);
+}
+
+.btn-secondary {
+  background: var(--light-gray);
+  color: var(--dark-color);
+  border: 2px solid var(--medium-gray);
+}
+
+.btn-secondary:hover {
+  background: var(--medium-gray);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.btn-small {
+  padding: 6px 12px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-small:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+/* Tablas */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--spacing-sm);
+}
+
+.data-table th {
+  background: var(--light-gray);
+  color: var(--dark-color);
+  font-weight: 600;
+  padding: 12px;
+  text-align: left;
+  border-bottom: 2px solid var(--medium-gray);
+}
+
+.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--light-gray);
+}
+
+.data-table tr:hover {
+  background: rgba(27, 83, 168, 0.05);
+}
+
+/* Layout específico para EditHorarios */
+.layout-container {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: var(--spacing-lg);
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.form-card {
+  background: white;
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  box-shadow: var(--box-shadow);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .layout-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .main-header {
+    height: 90px;
+    padding: 0 var(--spacing-md);
+  }
+  
+  .logo-placeholder {
+    width: 100px;
+    height: 70px;
+    font-size: 20px;
+  }
+  
+  .main-title {
+    font-size: 22px;
+  }
+  
+  .main-subtitle {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .classroom-state-main,
+  .edit-horarios-main,
+  .editar-modulo-main,
+  .editar-modulo-impartido-main,
+  .main-classroom-content,
+  .main-modulos-content,
+  .schedules-content {
+    padding: 110px var(--spacing-sm) var(--spacing-lg);
+  }
+  
+  .button-group {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+/* Estados para aulas */
+.state-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.state-disponible {
+  background: #28a745;
+}
+
+.state-en-uso {
+  background: #17a2b8;
+}
+
+.state-en-mantenimiento {
+  background: #ffc107;
+  color: #212529;
+}
+
+.state-inhabilitada {
+  background: #dc3545;
+}
+
+/* Información importante */
+.info-important {
+  background: rgba(228, 133, 178, 0.1);
+  border-left: 4px solid var(--accent-color);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  margin: var(--spacing-md) 0;
+}
+
+.info-important h4 {
+  color: var(--dark-color);
+  margin-bottom: var(--spacing-xs);
+}
+
+.info-important ul {
+  list-style-type: none;
+  padding-left: var(--spacing-sm);
+}
+
+.info-important li {
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: var(--dark-gray);
+}
+
+/* Info card */
+.info-card {
+  background: var(--light-gray);
+  border-radius: 8px;
+  padding: var(--spacing-md);
+  margin: var(--spacing-sm) 0;
+}
+
+.info-text {
+  color: var(--dark-color);
+  font-size: 14px;
+  line-height: 1.5;
+}

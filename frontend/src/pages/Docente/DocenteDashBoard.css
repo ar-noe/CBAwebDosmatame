@@ -1,0 +1,38 @@
+/* src/pages/Docente/DocenteDashboard.css */
+
+.docente-dashboard {
+    padding: 20px;
+    background-color: #f5f5f5;
+    min-height: 100vh;
+}
+
+.dashboard-header {
+    margin-bottom: 30px;
+}
+
+.dashboard-header h1 {
+    color: #333;
+    margin: 0;
+}
+
+.dashboard-content {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.dashboard-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.dashboard-card h3 {
+    margin-top: 0;
+    color: #2c3e50;
+}
+
+.dashboard-card p {
+    color: #666;
+}

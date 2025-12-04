@@ -31,8 +31,26 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
   };
 
+  // Función para testing 
+  const loginTestUser = (role) => {
+    const testUser = {
+      id: 1,
+      email: 'test@example.com',
+      role: role, // 'admin' o 'docente'
+      name: role === 'admin' ? 'Administrador' : 'Profesor'
+    };
+    setUser(testUser);
+    localStorage.setItem('user', JSON.stringify(testUser));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      isAuthenticated: !!user,
+      loginTestUser // ← NO OLVIDES EXPORTARLA
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -52,11 +52,14 @@ body {
 /* Contenedor principal */
 .signup-container {
   display: flex;
-  justify-content: center;
+  flex-direction: column; /* Cambia de row a column */
+  justify-content: flex-start; /* Cambia de center a flex-start */
   align-items: center;
   min-height: 100vh;
-  padding: var(--spacing-md);
+  padding: 0;
   background: linear-gradient(135deg, var(--light-color) 0%, var(--light-gray) 100%);
+  position: relative;
+  overflow-y: auto; /* Permite desplazamiento vertical */
 }
 
 /* Tarjeta de registro */
@@ -66,8 +69,9 @@ body {
   box-shadow: var(--box-shadow);
   width: 100%;
   max-width: 800px;
-  overflow: hidden;
+  overflow: visible; /* Cambia de hidden a visible */
   transition: transform var(--transition-normal);
+  margin: 0 auto;
 }
 
 .signup-card:hover {
@@ -626,4 +630,63 @@ body {
   padding: var(--spacing-sm);
   border-radius: var(--border-radius-sm);
   box-shadow: var(--box-shadow);
+}
+
+/* Correcciones específicas para centrado */
+.signup-main-content {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Cambia a flex-start */
+  width: 100%;
+  max-width: 100%;
+  padding: 140px var(--spacing-md) var(--spacing-xl);
+  min-height: calc(100vh - 105px); /* Resta la altura del header */
+  overflow-y: auto; /* Permite desplazamiento */
+  margin-top: 105px; /* Altura del header */
+}
+
+.signup-card-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Asegurar que los inputs no se desborden */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  width: 100%;
+}
+
+.form-group {
+  width: 100%;
+  margin-bottom: var(--spacing-md);
+}
+
+.form-input, .form-select {
+  width: 100%;
+  min-width: 0; /* Previene desbordamiento */
+}
+
+/* Corrección para inputs en filas */
+.form-row > .form-group {
+  width: 100%;
+}
+
+/* Media query para móviles - asegurar que se vean bien */
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+  
+  .signup-card {
+    margin: 0 var(--spacing-sm);
+    width: calc(100% - var(--spacing-sm) * 2);
+  }
 }
