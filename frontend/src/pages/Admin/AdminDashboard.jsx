@@ -1,40 +1,82 @@
-// src/pages/Admin/AdminDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-//import './AdminDashboard.css';
+
+import libroIcon from '../../assets/images/libro.png';
+import aulaIcon from '../../assets/images/aula.png';
+import estIcon from '../../assets/images/estudiante.png';
+import profIcon from '../../assets/images/profesor.png';
+import libroSIcon from '../../assets/images/libroSelect.png';
+import aulaSIcon from '../../assets/images/aulaSelect.png';
+import calSIcon from '../../assets/images/calendarioSelect.png';
+import profSIcon from '../../assets/images/profesorSelected.png';
+
+import './AdminDashboard.css';
+import Layout from '../../components/Layout/Layout';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState({
-    modulos: 0,
-    aulas: 0,
-    docentes: 0,
-    estudiantes: 0
+    modulos: 25,  // Valores por defecto
+    aulas: 12,
+    docentes: 15,
+    estudiantes: 350
   });
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [hasToken, setHasToken] = useState(false);
 
   useEffect(() => {
-    fetchDashboardStats();
+    // Obtener datos del usuario desde localStorage
+    const usuarioData = localStorage.getItem('usuario');
+    const token = localStorage.getItem('token');
+    
+    if (usuarioData) {
+      setUser(JSON.parse(usuarioData));
+    }
+    
+    if (token) {
+      setHasToken(true);
+      fetchDashboardStats(token);
+    } else {
+      // Si no hay token, usar datos por defecto
+      console.warn('No se encontró token de autenticación');
+      setLoading(false);
+    }
   }, []);
 
-  const fetchDashboardStats = async () => {
+  const fetchDashboardStats = async (token) => {
     try {
-      // En producción, llamadas a la API
-      // const modulosRes = await axios.get('/api/modulos-impartidos/count');
-      // const aulasRes = await axios.get('/api/aulas/count');
-      // const docentesRes = await axios.get('/api/usuarios/count/rol/2');
-      // const estudiantesRes = await axios.get('/api/estudiantes-inscritos/count');
-      
-      setStats({
-        modulos: 25,
-        aulas: 12,
-        docentes: 15,
-        estudiantes: 350
+      const response = await fetch('http://localhost:8000/api/dashboard/estadisticas', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       });
-      setLoading(false);
+      
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setStats({
+          modulos: data.data.modulos || 25,
+          aulas: data.data.aulas || 12,
+          docentes: data.data.docentes || 15,
+          estudiantes: data.data.estudiantes || 350
+        });
+      } else {
+        console.warn('Respuesta del servidor:', data.message);
+        // Mantener datos por defecto
+      }
+      
     } catch (error) {
-      console.error('Error cargando estadísticas:', error);
+      console.error('Error cargando estadísticas:', error.message);
+      // Mantener datos por defecto si falla
+    } finally {
       setLoading(false);
     }
   };
@@ -42,35 +84,35 @@ const AdminDashboard = () => {
   const cards = [
     {
       id: 'modules',
-      title: '📚 Módulos Impartidos',
+      title: 'Módulos Impartidos',
       description: 'Gestiona modulos_impartidos',
-      icon: '📚',
-      color: '#17409c',
+      icon: libroSIcon,
+      color: '#7fb4e0',
       path: '/admin/modules'
     },
     {
       id: 'classrooms',
-      title: '🏫 Gestión de Aulas',
+      title: 'Gestión de Aulas',
       description: 'Administra tabla aulas',
-      icon: '🏫',
+      icon: aulaSIcon,
       color: '#1b53a8',
       path: '/admin/classrooms'
     },
     {
       id: 'schedules',
-      title: '📅 Asignación de Horarios',
+      title: 'Asignación de Horarios',
       description: 'Asigna horarios en modulos_impartidos',
-      icon: '📅',
-      color: '#e485b2',
+      icon: calSIcon,
+      color: '#7fb4e0',
       path: '/admin/schedule/edit'
     },
     {
-      id: 'teachers',
-      title: '👨‍🏫 Gestión de Docentes',
-      description: 'Administra usuarios con rol docente',
-      icon: '👨‍🏫',
+      id: 'users',
+      title: 'Registrar Usuarios',
+      description: 'Crea nuevos usuarios del sistema',
+      icon: profSIcon,
       color: '#7fb4e0',
-      path: '/admin/teachers'
+      path: '/signup'
     }
   ];
 
@@ -78,97 +120,130 @@ const AdminDashboard = () => {
     navigate(path);
   };
 
+  // Comprueba si el usuario debería estar aquí
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.warn('Redirigiendo a login - no hay token');
+      navigate('/login');
+    }
+  }, [navigate]);
+
   if (loading) {
-    return <div className="loading">Cargando dashboard...</div>;
+    return (
+      <Layout headerVariant="admin">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Cargando dashboard...</p>
+        </div>
+      </Layout>
+    );
   }
 
   return (
-    <div className="admin-dashboard">
-      <div className="dashboard-header">
-        <h1>Panel de Administración - Sistema CBA</h1>
-        <p>Gestor de Base de Datos Laravel</p>
-      </div>
-
-      {/* Estadísticas */}
-      <div className="dashboard-stats">
-        <div className="stat-card">
-          <div className="stat-content">
-            <h3>{stats.modulos}</h3>
-            <p>Módulos Impartidos</p>
-            <small>tabla: modulos_impartidos</small>
+    <Layout headerVariant="admin" pageSubtitle="Panel de Administración">
+      <div className="admin-dashboard">
+        {/* Información del usuario */}
+        <div className="user-info-card">
+          <div className="user-avatar">
+            <span className="avatar-text">
+              {user?.persona?.nombres?.charAt(0) || 'A'}
+            </span>
           </div>
-        </div>
-        
-        <div className="stat-card">
-          <div className="stat-content">
-            <h3>{stats.aulas}</h3>
-            <p>Aulas Registradas</p>
-            <small>tabla: aulas</small>
-          </div>
-        </div>
-        
-        <div className="stat-card">
-          <div className="stat-content">
-            <h3>{stats.docentes}</h3>
-            <p>Docentes Activos</p>
-            <small>tabla: usuarios (rol_id = 2)</small>
-          </div>
-        </div>
-        
-        <div className="stat-card">
-          <div className="stat-content">
-            <h3>{stats.estudiantes}</h3>
-            <p>Estudiantes Inscritos</p>
-            <small>tabla: estudiantes_inscritos</small>
-          </div>
-        </div>
-      </div>
-
-      {/* Acciones principales */}
-      <div className="dashboard-actions">
-        <h2>Gestión del Sistema</h2>
-        <div className="actions-grid">
-          {cards.map((card) => (
-            <div
-              key={card.id}
-              className="action-card"
-              onClick={() => handleCardClick(card.path)}
-            >
-              <div className="action-icon" style={{ backgroundColor: card.color }}>
-                {card.icon}
-              </div>
-              <h3>{card.title}</h3>
-              <p>{card.description}</p>
+          <div className="user-details">
+            <h2>Bienvenido, {user?.persona?.nombres || 'Administrador'}</h2>
+            <div className="user-meta">
+              <span className="user-role">
+                <strong>Rol:</strong> {user?.rol?.nombre || 'Administrador'}
+              </span>
+              <span className="user-email">
+                <strong>Usuario:</strong> {user?.correo || 'admin@cba.edu.bo'}
+              </span>
             </div>
-          ))}
+          </div>
         </div>
-      </div>
+        {/* Mensaje de advertencia si no hay token */}
+        {!hasToken && (
+          <div className="warning-banner">
+            ⚠️ No se pudo verificar la autenticación. Usando datos de demostración.
+          </div>
+        )}
+        
+        {/* Estadísticas */}
+        <div className="dashboard-section">
+          <h2 className="section-title">
+            <span className="title-icon"></span> Estadísticas del Sistema
+          </h2>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-icon" style={{ backgroundColor: '#7fb4e0' }}>
+                <img src={libroIcon} alt="Módulos" style={{height:30}}/>
+              </div>
+              <div className="stat-content">
+                <h3>{stats.modulos}</h3>
+                <p>Módulos Impartidos</p>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-icon" style={{ backgroundColor: '#1b53a8' }}>
+                <img src={aulaIcon} alt="Aulas" style={{height:30}}/>
+              </div>
+              <div className="stat-content">
+                <h3>{stats.aulas}</h3>
+                <p>Aulas Registradas</p>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-icon" style={{ backgroundColor: '#7fb4e0' }}>
+                <img src={profIcon} alt="Docentes" style={{height:30}}/>
+              </div>
+              <div className="stat-content">
+                <h3>{stats.docentes}</h3>
+                <p>Docentes Activos</p>
+              </div>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-icon" style={{ backgroundColor: '#17409c' }}>
+                <img src={estIcon} alt="Estudiantes" style={{height:30}}/>
+              </div>
+              <div className="stat-content">
+                <h3>{stats.estudiantes}</h3>
+                <p>Estudiantes Inscritos</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* Quick Links */}
-      <div className="quick-links">
-        <h2>Acciones Rápidas</h2>
-        <div className="links-grid">
-          <button 
-            onClick={() => navigate('/admin/module/edit-impartido/new')}
-            className="link-btn primary"
-          >
-            ➕ Crear Nuevo Módulo
-          </button>
-          <button 
-            onClick={() => navigate('/admin/classroom/state')}
-            className="link-btn secondary"
-          >
-            🏫 Cambiar Estado de Aula
-          </button>
-          <button 
-            onClick={() => navigate('/admin/schedule/edit')}
-            className="link-btn accent"
-          >
-            📅 Asignar Horario
-          </button>
+        {/* Acciones principales */}
+        <div className="dashboard-section">
+          <h2 className="section-title">
+            <span className="title-icon"></span> Gestión del Sistema
+          </h2>
+          <div className="actions-grid">
+            {cards.map((card) => (
+              <div
+                key={card.id}
+                className="action-card"
+                onClick={() => handleCardClick(card.path)}
+                style={{ borderTopColor: card.color }}
+              >
+                <div className="action-icon" style={{ color: card.color}}>
+                  <img src={card.icon} alt={card.title} style={{height:40}}/>
+                </div>
+                <h3>{card.title}</h3>
+                <p>{card.description}</p>
+                <span className="action-link">
+                  Acceder <span className="arrow">→</span>
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </Layout>
   );
 };
 

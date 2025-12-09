@@ -2,11 +2,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
+import Layout from '../../components/Layout/Layout';
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    correo: '', // Cambiado de 'email' a 'correo'
+    contrasenia: '' // Cambiado de 'password' a 'contrasenia'
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -30,14 +31,12 @@ const Login = () => {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email es requerido';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email no válido';
+    if (!formData.correo.trim()) {
+      newErrors.correo = 'Usuario es requerido';
     }
     
-    if (!formData.password) {
-      newErrors.password = 'Contraseña requerida';
+    if (!formData.contrasenia) {
+      newErrors.contrasenia = 'Contraseña requerida';
     }
     
     return newErrors;
@@ -57,15 +56,38 @@ const Login = () => {
     try {
       console.log('Iniciando sesión:', formData);
       
-      // Simulación de login exitoso
-      setTimeout(() => {
-        alert('¡Inicio de sesión exitoso!');
-        navigate('/modules'); // Redirigir a módulos después del login
-      }, 1000);
+      // Llamada real a la API
+      const response = await fetch('http://localhost:8000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Error en el inicio de sesión');
+      }
+      
+      // Guardar token en localStorage
+      localStorage.setItem('token', data.access_token);
+      localStorage.setItem('usuario', JSON.stringify(data.usuario));
+      
+      // Mostrar mensaje de éxito
+      alert('¡Inicio de sesión exitoso!');
+      
+      // Redirigir según el rol
+      if (data.usuario.rol_id === 1) {
+        navigate('/admin/dashboard'); // Admin
+      } else {
+        navigate('/modules'); // Otros usuarios
+      }
       
     } catch (error) {
       console.error('Error:', error);
-      setErrors({ submit: 'Error al iniciar sesión. Verifica tus credenciales.' });
+      setErrors({ submit: error.message || 'Error al iniciar sesión. Verifica tus credenciales.' });
     } finally {
       setLoading(false);
     }
@@ -82,101 +104,68 @@ const Login = () => {
   };
 
   return (
-    <div className="login-page">
-      <head className="main-header">
-        <div className="header-content">
-          <div className="logo-section">
-            <div className="logo-placeholder">CBA</div>
-          </div>
-          <div className="title-section">
-            <h1 className="main-title">CBA Personnel System</h1>
-            <p className="main-subtitle">Log In</p>
-          </div>
-        </div>
-      </head>
-
-      <main className="login-main">
-        <div className="login-container">
-          <div className="login-card">
-            <div className="login-header">
-              <h2>Iniciar Sesión</h2>
-              <p>Ingresa tus credenciales para acceder al sistema</p>
-            </div>
-
-            {errors.submit && (
-              <div className="alert alert-error">
-                {errors.submit}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="login-form">
-              <div className="form-group">
-                <label className="form-label">Email:</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={`form-input ${errors.email ? 'input-error' : ''}`}
-                  placeholder="ejemplo@email.com"
-                />
-                {errors.email && <span className="error-message">{errors.email}</span>}
+    <Layout headerVariant="login" pageSubtitle="Log In">
+      <div className="login-page">
+        <main className="login-main">
+          <div className="login-container">
+            <div className="login-card">
+              <div className="login-header">
+                <h2>Iniciar Sesión</h2>
+                <p>Ingresa tus credenciales para acceder al sistema</p>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Contraseña:</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={`form-input ${errors.password ? 'input-error' : ''}`}
-                  placeholder="Ingresa tu contraseña"
-                />
-                {errors.password && <span className="error-message">{errors.password}</span>}
-              </div>
+              {errors.submit && (
+                <div className="alert alert-error">
+                  {errors.submit}
+                </div>
+              )}
 
-              <div className="form-options">
-                <label className="checkbox-label">
-                  <input type="checkbox" />
-                  <span className="checkbox-custom"></span>
-                  <span className="checkbox-text">Recordarme</span>
-                </label>
-                <a href="#" className="forgot-password">¿Olvidaste tu contraseña?</a>
-              </div>
+              <form onSubmit={handleSubmit} className="login-form">
+                <div className="form-group">
+                  <label className="form-label">Usuario:</label>
+                  <input
+                    type="text"
+                    name="correo"
+                    value={formData.correo}
+                    onChange={handleChange}
+                    className={`form-input ${errors.correo ? 'input-error' : ''}`}
+                    placeholder="cba + [número de CI]"
+                  />
+                  {errors.correo && <span className="error-message">{errors.correo}</span>}
+                </div>
 
-              <button 
-                type="submit" 
-                className="submit-btn"
-                disabled={loading}
-              >
-                {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-              </button>
-            </form>
+                <div className="form-group">
+                  <label className="form-label">Contraseña:</label>
+                  <input
+                    type="password"
+                    name="contrasenia"
+                    value={formData.contrasenia}
+                    onChange={handleChange}
+                    className={`form-input ${errors.contrasenia ? 'input-error' : ''}`}
+                    placeholder="Cb@ + [fecha de nacimient○] (YYYYMMDD)"
+                  />
+                  {errors.contrasenia && <span className="error-message">{errors.contrasenia}</span>}
+                </div>
 
-            <div className="login-footer">
-              <p>¿No tienes una cuenta?{' '}
                 <button 
-                  onClick={handleGoToSignUp}
-                  className="link-btn"
+                  type="submit" 
+                  className="submit-btn"
+                  disabled={loading}
                 >
-                  Regístrate aquí
+                  {loading ? (
+                    <>
+                      <span className="spinner"></span>
+                      Iniciando sesión...
+                    </>
+                  ) : 'Iniciar Sesión'}
                 </button>
-              </p>
-            </div>
-
-            <div className="login-buttons">
-              <button onClick={handleExit} className="btn-secondary">
-                Exit
-              </button>
-              <button onClick={handleGoToSignUp} className="btn-primary">
-                Sign Up
-              </button>
+              </form>
+              
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </Layout>
   );
 };
 

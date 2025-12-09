@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Signup.css';
+import Layout from '../../components/Layout/Layout';
+//import api from '../../services/api'; // Asegúrate de tener este servicio configurado
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -9,23 +11,25 @@ const Signup = () => {
     ap_pat: '',
     ap_mat: '',
     fecha_nac: '',
-    correo: '',
-    contrasenia: '',
-    confirmContrasenia: '',
-    rol_id: '1',
+    rol_id: '2', // Valor por defecto para docente
   });
 
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [generatedCredentials, setGeneratedCredentials] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchRoles = async () => {
       try {
+        // Si tienes API para roles
+        // const response = await api.get('/roles');
+        // setRoles(response.data);
+        
         const mockRoles = [
-          { id: 1, nombre: 'Administrador' },
-          { id: 2, nombre: 'Docente' }
+          { id: 2, nombre: 'Docente' },
+          { id: 1, nombre: 'Administrador' }
         ];
         setRoles(mockRoles);
       } catch (error) {
@@ -66,8 +70,8 @@ const Signup = () => {
     
     if (!formData.ci.trim()) {
       newErrors.ci = 'El CI es requerido';
-    } else if (!/^\d{8,12}$/.test(formData.ci)) {
-      newErrors.ci = 'CI debe tener 8-12 dígitos';
+    } else if (!/^\d{7,10}$/.test(formData.ci)) {
+      newErrors.ci = 'CI debe tener 7-10 dígitos';
     }
     
     if (!formData.nombres.trim()) {
@@ -95,25 +99,13 @@ const Signup = () => {
       const today = new Date();
       const age = today.getFullYear() - birthDate.getFullYear();
       
-      if (age < 18) {
-        newErrors.fecha_nac = 'Debe ser mayor de 18 años';
+      if (age < 14) {
+        newErrors.fecha_nac = 'Debe ser mayor de 14 años';
       }
     }
     
-    if (!formData.correo.trim()) {
-      newErrors.correo = 'Correo es requerido';
-    } else if (!/\S+@\S+\.\S+/.test(formData.correo)) {
-      newErrors.correo = 'Correo no válido';
-    }
-    
-    if (!formData.contrasenia) {
-      newErrors.contrasenia = 'Contraseña requerida';
-    } else if (formData.contrasenia.length < 6) {
-      newErrors.contrasenia = 'Mínimo 6 caracteres';
-    }
-    
-    if (formData.contrasenia !== formData.confirmContrasenia) {
-      newErrors.confirmContrasenia = 'Las contraseñas no coinciden';
+    if (!formData.rol_id) {
+      newErrors.rol_id = 'Seleccione un tipo de usuario';
     }
     
     return newErrors;
@@ -122,6 +114,7 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setGeneratedCredentials(null);
     
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
@@ -131,32 +124,69 @@ const Signup = () => {
     }
     
     try {
+      // Obtener el token del localStorage (asumiendo que el admin está logueado)
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        setErrors({ submit: 'Debe iniciar sesión como administrador primero' });
+        setLoading(false);
+        return;
+      }
+      
       const dataToSend = {
-        persona: {
-          ci: formData.ci,
-          nombres: formData.nombres,
-          ap_pat: formData.ap_pat,
-          ap_mat: formData.ap_mat,
-          fecha_nac: formData.fecha_nac
-        },
-        usuario: {
-          correo: formData.correo,
-          contrasenia: formData.contrasenia,
-          rol_id: parseInt(formData.rol_id)
-        }
+        ci: formData.ci,
+        nombres: formData.nombres,
+        ap_pat: formData.ap_pat,
+        ap_mat: formData.ap_mat,
+        fecha_nac: formData.fecha_nac,
+        rol_id: parseInt(formData.rol_id)
       };
       
       console.log('Datos a enviar:', dataToSend);
       
-      setTimeout(() => {
-        alert('¡Registro exitoso! Revisa la consola para ver los datos.');
-        console.log('Registro simulado - Datos:', dataToSend);
-        navigate('/login');
-      }, 1000);
+      // Llamada a la API real
+      const response = await fetch('http://localhost:8000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(dataToSend)
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Error en el registro');
+      }
+      
+      // Mostrar credenciales generadas
+      setGeneratedCredentials({
+        usuario: data.credenciales_generadas.correo,
+        contrasenia: data.credenciales_generadas.contrasenia
+      });
+      
+      alert('¡Registro exitoso! Las credenciales se han generado automáticamente.');
+      
+      // limpiar formulario
+       setFormData({
+         ci: '',
+         nombres: '',
+         ap_pat: '',
+         ap_mat: '',
+         fecha_nac: '',
+         rol_id: '2',
+       });
       
     } catch (error) {
       console.error('Error:', error);
-      setErrors({ submit: 'Error al registrar. Intenta nuevamente.' });
+      if (error.message.includes('401') || error.message.includes('403')) {
+        setErrors({ submit: 'No tiene permisos de administrador para registrar usuarios' });
+      } else if (error.message.includes('CI ya existe')) {
+        setErrors({ submit: 'El CI ya está registrado en el sistema' });
+      } else {
+        setErrors({ submit: error.message || 'Error al registrar. Intenta nuevamente.' });
+      }
     } finally {
       setLoading(false);
     }
@@ -164,7 +194,7 @@ const Signup = () => {
 
   const getMinDate = () => {
     const today = new Date();
-    const minDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    const minDate = new Date(today.getFullYear() - 14, today.getMonth(), today.getDate());
     return minDate.toISOString().split('T')[0];
   };
 
@@ -174,259 +204,238 @@ const Signup = () => {
     return maxDate.toISOString().split('T')[0];
   };
 
-  return (
-    <div className="signup-page">
-      {/* Barra de navegación superior */}
-      <div className="main-header">
-        <div className="header-content">
-          <div className="logo-section">
-            {/* IMPORTANTE: Cambia esta ruta por una correcta o usa import */}
-            <div className="logo-placeholder">CBA</div>
-          </div>
-          <div className="title-section">
-            <h1 className="main-title">CBA Personnel System</h1>
-            <p className="main-subtitle">Sign Up</p>
-          </div>
-        </div>
-      </div>
+  // Función para copiar credenciales al portapapeles
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text)
+      .then(() => alert('Credencial copiada al portapapeles'))
+      .catch(err => console.error('Error al copiar:', err));
+  };
 
-      {/* Contenido principal */}
-      <main className="signup-main-content">
-        <div className="signup-card-container">
-          <div className="signup-card">
-            <header className="signup-header">
-              <div className="logo">
-                <div className="logo-icon">CBA</div>
-                <div className="logo-text">Centro Boliviano Argentino</div>
-              </div>
-              <h1 className="signup-title">Registro CBA</h1>
-              <p className="signup-subtitle">Completa los datos para crear una cuenta</p>
-            </header>
-            
-            {errors.submit && (
-              <div className="alert alert-error">
-                {errors.submit}
-              </div>
-            )}
-            
-            <form className="signup-form" onSubmit={handleSubmit}>
-              {/* Sección: Datos Personales */}
-              <div className="form-section">
-                <h3 className="section-title">Datos Personales</h3>
-                
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">CI / Documento de Identidad *</label>
-                    <input
-                      type="text"
-                      name="ci"
-                      value={formData.ci}
-                      onChange={handleChange}
-                      className={`form-input ${errors.ci ? 'input-error' : ''}`}
-                      placeholder="Ej: 12345678"
-                      maxLength="12"
-                    />
-                    {errors.ci && <span className="error-message">{errors.ci}</span>}
-                  </div>
-                </div>
-                
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Nombres *</label>
-                    <input
-                      type="text"
-                      name="nombres"
-                      value={formData.nombres}
-                      onChange={handleChange}
-                      className={`form-input ${errors.nombres ? 'input-error' : ''}`}
-                      placeholder="Ej: Juan Carlos"
-                      maxLength="70"
-                    />
-                    {errors.nombres && <span className="error-message">{errors.nombres}</span>}
-                  </div>
-                </div>
-                
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Apellido Paterno *</label>
-                    <input
-                      type="text"
-                      name="ap_pat"
-                      value={formData.ap_pat}
-                      onChange={handleChange}
-                      className={`form-input ${errors.ap_pat ? 'input-error' : ''}`}
-                      placeholder="Ej: Pérez"
-                      maxLength="50"
-                    />
-                    {errors.ap_pat && <span className="error-message">{errors.ap_pat}</span>}
-                  </div>
-                  
-                  <div className="form-group">
-                    <label className="form-label">Apellido Materno *</label>
-                    <input
-                      type="text"
-                      name="ap_mat"
-                      value={formData.ap_mat}
-                      onChange={handleChange}
-                      className={`form-input ${errors.ap_mat ? 'input-error' : ''}`}
-                      placeholder="Ej: González"
-                      maxLength="50"
-                    />
-                    {errors.ap_mat && <span className="error-message">{errors.ap_mat}</span>}
-                  </div>
-                </div>
-                
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Fecha de Nacimiento *</label>
-                    <input
-                      type="date"
-                      name="fecha_nac"
-                      value={formData.fecha_nac}
-                      onChange={handleChange}
-                      className={`form-input ${errors.fecha_nac ? 'input-error' : ''}`}
-                      max={getMinDate()}
-                      min={getMaxDate()}
-                    />
-                    {errors.fecha_nac && <span className="error-message">{errors.fecha_nac}</span>}
-                    <div className="form-hint">Debes ser mayor de 18 años</div>
-                  </div>
-                </div>
+  return (
+    <Layout headerVariant="signup" pageSubtitle="Personal Data Registration">
+      <div className="signup-page">
+        <main className="signup-main-content">
+          <div className="signup-card-container">
+            <div className="signup-card">
+              <div className="signup-header">
+                <h1 className="signup-title">Registro CBA</h1>
+                <p className="signup-subtitle">Completa los datos para crear una cuenta</p>
+                <p className="credentials-info">
+                  <strong>Nota:</strong> El usuario y contraseña se generan automáticamente
+                </p>
               </div>
               
-              {/* Sección: Datos de Cuenta */}
-              <div className="form-section">
-                <h3 className="section-title">Datos de Cuenta</h3>
-                
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Correo Electrónico *</label>
-                    <input
-                      type="email"
-                      name="correo"
-                      value={formData.correo}
-                      onChange={handleChange}
-                      className={`form-input ${errors.correo ? 'input-error' : ''}`}
-                      placeholder="ejemplo@email.com"
-                    />
-                    {errors.correo && <span className="error-message">{errors.correo}</span>}
+              {errors.submit && (
+                <div className="alert alert-error">
+                  {errors.submit}
+                </div>
+              )}
+              
+              {/* Mostrar credenciales generadas */}
+              {generatedCredentials && (
+                <div className="credentials-card">
+                  <h3> ¡Usuario Registrado Exitosamente!</h3>
+                  <div className="credentials-info">
+                    <p><strong>Credenciales generadas:</strong></p>
+                    <div className="credential-item">
+                      <span className="credential-label">Usuario:</span>
+                      <span className="credential-value">{generatedCredentials.usuario}</span>
+                      <button 
+                        onClick={() => copyToClipboard(generatedCredentials.usuario)}
+                        className="copy-btn"
+                      >
+                         Copiar
+                      </button>
+                    </div>
+                    <div className="credential-item">
+                      <span className="credential-label">Contraseña:</span>
+                      <span className="credential-value">{generatedCredentials.contrasenia}</span>
+                      <button 
+                        onClick={() => copyToClipboard(generatedCredentials.contrasenia)}
+                        className="copy-btn"
+                      >
+                         Copiar
+                      </button>
+                    </div>
+                    <p className="credentials-warning">
+                      Guarde estas credenciales. Serán necesarias para el primer inicio de sesión.
+                    </p>
                   </div>
                 </div>
-                
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Contraseña *</label>
-                    <input
-                      type="password"
-                      name="contrasenia"
-                      value={formData.contrasenia}
-                      onChange={handleChange}
-                      className={`form-input ${errors.contrasenia ? 'input-error' : ''}`}
-                      placeholder="Mínimo 6 caracteres"
-                    />
-                    {errors.contrasenia && <span className="error-message">{errors.contrasenia}</span>}
+              )}
+              
+              <form className="signup-form" onSubmit={handleSubmit}>
+                {/* Sección: Datos Personales */}
+                <div className="form-section">
+                  <h3 className="section-title">Datos Personales</h3>
+                  
+                  <div className="form-row">
+                    <div className="form-group full-width">
+                      <label className="form-label">CI / Documento de Identidad *</label>
+                      <input
+                        type="text"
+                        name="ci"
+                        value={formData.ci}
+                        onChange={handleChange}
+                        className={`form-input ${errors.ci ? 'input-error' : ''}`}
+                        placeholder="Ej: 12345678"
+                        maxLength="10"
+                      />
+                      {errors.ci && <span className="error-message">{errors.ci}</span>}
+                      
+                    </div>
                   </div>
                   
-                  <div className="form-group">
-                    <label className="form-label">Confirmar Contraseña *</label>
-                    <input
-                      type="password"
-                      name="confirmContrasenia"
-                      value={formData.confirmContrasenia}
-                      onChange={handleChange}
-                      className={`form-input ${errors.confirmContrasenia ? 'input-error' : ''}`}
-                      placeholder="Repite tu contraseña"
-                    />
-                    {errors.confirmContrasenia && <span className="error-message">{errors.confirmContrasenia}</span>}
+                  <div className="form-row">
+                    <div className="form-group full-width">
+                      <label className="form-label">Nombres *</label>
+                      <input
+                        type="text"
+                        name="nombres"
+                        value={formData.nombres}
+                        onChange={handleChange}
+                        className={`form-input ${errors.nombres ? 'input-error' : ''}`}
+                        placeholder="Ej: Juan Carlos"
+                        maxLength="70"
+                      />
+                      {errors.nombres && <span className="error-message">{errors.nombres}</span>}
+                    </div>
                   </div>
-                </div>
-                
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="form-label">Tipo de Usuario *</label>
-                    <select
-                      name="rol_id"
-                      value={formData.rol_id}
-                      onChange={handleChange}
-                      className="form-select"
-                    >
-                      {roles.map((rol) => (
-                        <option key={rol.id} value={rol.id}>
-                          {rol.nombre}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="form-hint">
-                      * Docente: Acceso a horarios de clases<br />
-                      * Administrador: Acceso a asignación de módulos y docentes
+                  
+                  <div className="form-row two-columns">
+                    <div className="form-group">
+                      <label className="form-label">Apellido Paterno *</label>
+                      <input
+                        type="text"
+                        name="ap_pat"
+                        value={formData.ap_pat}
+                        onChange={handleChange}
+                        className={`form-input ${errors.ap_pat ? 'input-error' : ''}`}
+                        placeholder="Ej: Pérez"
+                        maxLength="50"
+                      />
+                      {errors.ap_pat && <span className="error-message">{errors.ap_pat}</span>}
+                    </div>
+                    
+                    <div className="form-group">
+                      <label className="form-label">Apellido Materno *</label>
+                      <input
+                        type="text"
+                        name="ap_mat"
+                        value={formData.ap_mat}
+                        onChange={handleChange}
+                        className={`form-input ${errors.ap_mat ? 'input-error' : ''}`}
+                        placeholder="Ej: González"
+                        maxLength="50"
+                      />
+                      {errors.ap_mat && <span className="error-message">{errors.ap_mat}</span>}
+                    </div>
+                  </div>
+                  
+                  <div className="form-row">
+                    <div className="form-group full-width">
+                      <label className="form-label">Fecha de Nacimiento *</label>
+                      <input
+                        type="date"
+                        name="fecha_nac"
+                        value={formData.fecha_nac}
+                        onChange={handleChange}
+                        className={`form-input ${errors.fecha_nac ? 'input-error' : ''}`}
+                        max={getMinDate()}
+                        min={getMaxDate()}
+                      />
+                      {errors.fecha_nac && <span className="error-message">{errors.fecha_nac}</span>}
+                      <div className="form-hint">
+                        Debe ser mayor de 14 años.
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              
-              {/* Términos y condiciones */}
-              <div className="form-group terms-group">
-                <label className="checkbox-label">
-                  <input 
-                    type="checkbox" 
-                    className="checkbox-input" 
-                    required 
-                  />
-                  <span className="checkbox-custom"></span>
-                  <span className="checkbox-text">
-                    Acepto los <a href="#" className="terms-link">términos y condiciones</a> y la <a href="#" className="terms-link">política de privacidad</a>
-                  </span>
-                </label>
-              </div>
-              
-              {/* Botón de registro */}
-              <button 
-                type="submit" 
-                className="submit-btn"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <span className="spinner"></span>
-                    Registrando...
-                  </>
-                ) : (
-                  'Crear Cuenta'
-                )}
-              </button>
-            </form>
-            
-            {/* Botones adicionales */}
-            <div className="button-row">
-              <button 
-                onClick={handleExit}
-                className="secondary-btn"
-              >
-                Salir
-              </button>
-              <button 
-                onClick={handleGoToLogin}
-                className="primary-btn"
-              >
-                Ir a Login
-              </button>
-            </div>
-            
-            <div className="login-link">
-              <p>
-                ¿Ya tienes una cuenta?{' '}
+                
+                {/* Sección: Tipo de Usuario */}
+                <div className="form-section">
+                  <h3 className="section-title">Tipo de Usuario</h3>
+                  
+                  <div className="form-row">
+                    <div className="form-group full-width">
+                      <label className="form-label">Rol del Usuario *</label>
+                      <select
+                        name="rol_id"
+                        value={formData.rol_id}
+                        onChange={handleChange}
+                        className={`form-select ${errors.rol_id ? 'input-error' : ''}`}
+                      >
+                        <option value="">Seleccione un rol</option>
+                        {roles.map((rol) => (
+                          <option key={rol.id} value={rol.id}>
+                            {rol.nombre}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.rol_id && <span className="error-message">{errors.rol_id}</span>}
+                      <div className="form-hint">
+                        <strong>* Docente:</strong> Acceso a horarios de clases<br />
+                        <strong>* Administrador:</strong> Acceso completo al sistema
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Información de credenciales automáticas */}
+                <div className="credentials-preview">
+                  <h4>Credenciales que se generarán:</h4>
+                  <div className="preview-item">
+                    <span>Usuario:</span>
+                    <code>{formData.ci ? `cba${formData.ci}` : 'cba[CI]'}</code>
+                  </div>
+                  <div className="preview-item">
+                    <span>Contraseña:</span>
+                    <code>
+                      {formData.fecha_nac 
+                        ? `Cb@${formData.fecha_nac.replace(/-/g, '')}`
+                        : 'Cb@YYYYMMDD'
+                      }
+                    </code>
+                  </div>
+                </div>
+                
+                {/* Botón de registro */}
                 <button 
-                  onClick={() => navigate('/login')}
-                  className="login-link-text"
+                  type="submit" 
+                  className="submit-btn"
+                  disabled={loading}
                 >
-                  Inicia sesión aquí
+                  {loading ? (
+                    <>
+                      <span className="spinner"></span>
+                      Registrando...
+                    </>
+                  ) : (
+                    'Crear Cuenta'
+                  )}
                 </button>
-              </p>
+              </form>
+              
+              {/* Botones adicionales */}
+              <div className="button-row">
+                <button 
+                  onClick={handleExit}
+                  className="secondary-btn"
+                >
+                  Salir
+                </button>
+                <button 
+                  onClick={handleGoToLogin}
+                  className="primary-btn"
+                >
+                  Ir a Login
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </Layout>
   );
 };
 

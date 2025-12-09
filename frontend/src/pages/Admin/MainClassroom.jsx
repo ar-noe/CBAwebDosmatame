@@ -90,7 +90,7 @@ const MainClassroom = () => {
       <main className="main-classroom-content">
         <div className="content-container">
           <div className="page-header">
-            <h2>🏫 Gestión de Aulas</h2>
+            <h2>Gestión de Aulas</h2>
           </div>
 
           {/* Formulario para agregar aulas */}
