@@ -3,15 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout/Layout';
 import editB from '../../assets/images/edit.png';
 import deleteB from '../../assets/images/delete.png';
-
 import './MainModulosImp.css';
 
 const MainModulosImp = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     modulo_id: '',
-    aula_id: '',
-    persona_id: '',
     horario_id: '',
     bimestre_id: ''
   });
@@ -19,9 +16,6 @@ const MainModulosImp = () => {
   const [modulesImpartidos, setModulesImpartidos] = useState([]);
   const [filteredModules, setFilteredModules] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [teachers, setTeachers] = useState([]);
-  const [branches, setBranches] = useState([]);
-  const [classrooms, setClassrooms] = useState([]);
   const [bimestres, setBimestres] = useState([]);
   const [modulos, setModulos] = useState([]);
   const [horarios, setHorarios] = useState([]);
@@ -29,24 +23,18 @@ const MainModulosImp = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [showDropdown, setShowDropdown] = useState({
-    docente: false,
     modulo: false,
-    aula: false,
     horario: false,
     bimestre: false
   });
   const [dropdownSearch, setDropdownSearch] = useState({
-    docente: '',
     modulo: '',
-    aula: '',
     horario: '',
     bimestre: ''
   });
 
   const dropdownRefs = {
-    docente: useRef(null),
     modulo: useRef(null),
-    aula: useRef(null),
     horario: useRef(null),
     bimestre: useRef(null)
   };
@@ -79,60 +67,34 @@ const MainModulosImp = () => {
     }
   }, [searchTerm, modulesImpartidos]);
 
- const handleApiResponse = (data) => {
-  console.log('Datos recibidos:', data);
-  
-  // Si la respuesta tiene la estructura { data: [...], message: ... }
-  if (data && data.data) {
-    // Si data.data es un array, devolverlo directamente
-    if (Array.isArray(data.data)) {
-      return data.data;
+  const handleApiResponse = (data) => {
+    if (data && data.data) {
+      if (Array.isArray(data.data)) {
+        return data.data;
+      }
+      return [data.data];
     }
-    // Si es un objeto, devolverlo como array con un elemento
-    return [data.data];
-  }
-  
-  // Si es directamente un array
-  if (Array.isArray(data)) {
-    return data;
-  }
-  
-  // Si es un objeto con otra estructura
-  if (typeof data === 'object' && data !== null) {
-    // Buscar arrays dentro del objeto
-    const arrays = Object.values(data).filter(Array.isArray);
-    if (arrays.length > 0) {
-      return arrays[0];
+    
+    if (Array.isArray(data)) {
+      return data;
     }
-  }
-  
-  return [];
-};
+    
+    if (typeof data === 'object' && data !== null) {
+      const arrays = Object.values(data).filter(Array.isArray);
+      if (arrays.length > 0) {
+        return arrays[0];
+      }
+    }
+    
+    return [];
+  };
 
   const loadInitialData = async () => {
     try {
       const token = localStorage.getItem('token');
       
-      const [personasRes, branchesRes, classroomsRes, bimestresRes, modulosRes, horariosRes] = 
+      const [bimestresRes, modulosRes, horariosRes] = 
         await Promise.all([
-          fetch('http://localhost:8000/api/personas', {
-            headers: { 
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/json'
-            }
-          }),
-          fetch('http://localhost:8000/api/sucursales', {
-            headers: { 
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/json'
-            }
-          }),
-          fetch('http://localhost:8000/api/aulas?include=sucursal', {
-            headers: { 
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/json'
-            }
-          }),
           fetch('http://localhost:8000/api/bimestres', {
             headers: { 
               'Authorization': `Bearer ${token}`,
@@ -153,39 +115,15 @@ const MainModulosImp = () => {
           })
         ]);
 
-      if (personasRes.ok) {
-        const personasData = await personasRes.json();
-        const processedData = handleApiResponse(personasData);
-        setTeachers(processedData || []);
-      }
-
-      if (branchesRes.ok) {
-        const branchesData = await branchesRes.json();
-        const processedData = handleApiResponse(branchesData);
-        setBranches(processedData || []);
-      }
-
-      if (classroomsRes.ok) {
-        const classroomsData = await classroomsRes.json();
-        console.log('Aulas API response:', classroomsData);
-        const processedData = handleApiResponse(classroomsData);
-        console.log('Aulas procesadas:', processedData);
-        setClassrooms(processedData || []);
-      }
-
       if (bimestresRes.ok) {
         const bimestresData = await bimestresRes.json();
         const processedData = handleApiResponse(bimestresData);
         setBimestres(processedData || []);
-      } else {
-        console.error('Error en bimestres:', await bimestresRes.text());
       }
 
       if (modulosRes.ok) {
         const modulosData = await modulosRes.json();
-        console.log('Módulos API response:', modulosData);
         const processedData = handleApiResponse(modulosData);
-        console.log('Módulos procesados:', processedData);
         setModulos(processedData || []);
       }
 
@@ -201,44 +139,37 @@ const MainModulosImp = () => {
     }
   };
 
- const loadModulesImpartidos = async () => {
-  try {
-    setLoading(true);
-    const token = localStorage.getItem('token');
-    
-    // URL con include para relaciones anidadas
-    const response = await fetch('http://localhost:8000/api/modulos_impartidos?include=modulo.curso,aula.sucursal,persona,horario,bimestre', {
-      headers: { 
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const result = await response.json();
-      console.log('API Response completo:', result);
+  const loadModulesImpartidos = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
       
-      // Accede directamente a result.data
-      if (result.data && Array.isArray(result.data)) {
-        console.log('Módulos impartidos cargados:', result.data.length);
-        setModulesImpartidos(result.data);
-        setFilteredModules(result.data); // Inicializa filteredModules también
+      const response = await fetch('http://localhost:8000/api/modulos_impartidos?include=modulo.curso,persona,horario,bimestre', {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        
+        if (result.data && Array.isArray(result.data)) {
+          setModulesImpartidos(result.data);
+          setFilteredModules(result.data);
+        }
       } else {
-        console.error('Estructura inesperada:', result);
-        showMessage('error', 'Formato de datos inesperado');
+        const errorText = await response.text();
+        console.error('Error en respuesta:', errorText);
+        showMessage('error', 'Error al cargar los módulos impartidos');
       }
-    } else {
-      const errorText = await response.text();
-      console.error('Error en respuesta:', errorText);
-      showMessage('error', 'Error al cargar los módulos impartidos');
+    } catch (error) {
+      console.error('Error cargando módulos impartidos:', error);
+      showMessage('error', 'Error de conexión al servidor');
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error('Error cargando módulos impartidos:', error);
-    showMessage('error', 'Error de conexión al servidor');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const performSearch = useCallback(() => {
     if (!searchTerm.trim()) {
@@ -250,27 +181,15 @@ const MainModulosImp = () => {
     
     const filtered = modulesImpartidos.filter(modulo => {
       const searchFields = [
-        modulo.persona?.nombres?.toLowerCase() || '',
-        modulo.persona?.ap_pat?.toLowerCase() || '',
-        modulo.persona?.ap_mat?.toLowerCase() || '',
-        modulo.persona?.ci?.toLowerCase() || '',
-        `${modulo.persona?.nombres || ''} ${modulo.persona?.ap_pat || ''} ${modulo.persona?.ap_mat || ''}`.toLowerCase().trim(),
-        
         modulo.modulo?.nombre?.toLowerCase() || '',
         modulo.modulo?.curso?.nombre?.toLowerCase() || '',
-        
-        modulo.aula?.numero_aula?.toLowerCase() || '',
-        modulo.aula?.sucursal?.alias?.toLowerCase() || '',
-        modulo.aula?.sucursal?.ubicacion?.toLowerCase() || '',
-        
+        modulo.persona?.nombres?.toLowerCase() || '',
+        modulo.persona?.ap_pat?.toLowerCase() || '',
+        modulo.persona?.ci?.toLowerCase() || '',
         formatTime(modulo.horario?.hora_inicio || '').toLowerCase(),
         formatTime(modulo.horario?.hora_fin || '').toLowerCase(),
-        `${formatTime(modulo.horario?.hora_inicio || '')} ${formatTime(modulo.horario?.hora_fin || '')}`.toLowerCase(),
-        
         modulo.bimestre?.nombre?.toLowerCase() || '',
         formatDate(modulo.bimestre?.fecha_inicio || '').toLowerCase(),
-        formatDate(modulo.bimestre?.fecha_fin || '').toLowerCase(),
-        
         modulo.id?.toString().toLowerCase() || ''
       ];
       
@@ -279,14 +198,6 @@ const MainModulosImp = () => {
     
     setFilteredModules(filtered);
   }, [searchTerm, modulesImpartidos]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-  };
 
   const handleSelectChange = (name, value) => {
     setFormData({
@@ -324,13 +235,19 @@ const MainModulosImp = () => {
       setFormLoading(true);
       const token = localStorage.getItem('token');
       
-      const requiredFields = ['modulo_id', 'aula_id', 'persona_id', 'horario_id', 'bimestre_id'];
+      const requiredFields = ['modulo_id', 'horario_id', 'bimestre_id'];
       const missingFields = requiredFields.filter(field => !formData[field]);
       
       if (missingFields.length > 0) {
-        showMessage('error', 'Por favor complete todos los campos requeridos');
+        showMessage('error', 'Por favor complete todos los campos obligatorios');
         return;
       }
+      
+      const dataToSend = {
+        modulo_id: formData.modulo_id,
+        bimestre_id: formData.bimestre_id,
+        horario_id: formData.horario_id
+      };
       
       const response = await fetch('http://localhost:8000/api/modulos_impartidos', {
         method: 'POST',
@@ -339,21 +256,36 @@ const MainModulosImp = () => {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(dataToSend)
       });
       
-      const data = await response.json();
+      const responseText = await response.text();
+      
+      if (!responseText) {
+        showMessage('error', 'Respuesta vacía del servidor');
+        return;
+      }
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Error parseando JSON:', parseError);
+        showMessage('error', 'Error en el formato de respuesta del servidor');
+        return;
+      }
       
       if (response.ok) {
-        showMessage('success', 'Módulo impartido creado exitosamente');
+        showMessage('success', '✅ Módulo creado exitosamente');
+        showMessage('info', 'Nota: Este módulo no tiene docente ni aula asignada. Asígnalos desde "Asignación de Horarios".', 7000);
         loadModulesImpartidos();
         handleClearForm();
       } else {
-        showMessage('error', data.message || 'Error al crear módulo impartido');
+        showMessage('error', data.message || data.error || '❌ Error al crear módulo');
       }
     } catch (error) {
       console.error('Error:', error);
-      showMessage('error', 'Error de conexión al servidor');
+      showMessage('error', '❌ Error de conexión al servidor');
     } finally {
       setFormLoading(false);
     }
@@ -362,8 +294,6 @@ const MainModulosImp = () => {
   const handleClearForm = () => {
     setFormData({
       modulo_id: '',
-      aula_id: '',
-      persona_id: '',
       horario_id: '',
       bimestre_id: ''
     });
@@ -387,22 +317,32 @@ const MainModulosImp = () => {
         }
       });
       
-      const data = await response.json();
+      const responseText = await response.text();
+      
+      if (!responseText) {
+        showMessage('error', 'Respuesta vacía del servidor');
+        return;
+      }
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Error parseando JSON:', parseError);
+        showMessage('error', 'Error en el formato de respuesta del servidor');
+        return;
+      }
       
       if (response.ok) {
-        showMessage('success', 'Módulo impartido eliminado exitosamente');
+        showMessage('success', '✅ Módulo impartido eliminado exitosamente');
         loadModulesImpartidos();
       } else {
-        showMessage('error', data.message || 'Error al eliminar módulo impartido');
+        showMessage('error', data.message || '❌ Error al eliminar módulo impartido');
       }
     } catch (error) {
       console.error('Error:', error);
-      showMessage('error', 'Error de conexión al servidor');
+      showMessage('error', '❌ Error de conexión al servidor');
     }
-  };
-
-  const handleSearch = () => {
-    performSearch();
   };
 
   const handleRefresh = () => {
@@ -417,7 +357,6 @@ const MainModulosImp = () => {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleSearch();
     }
   };
 
@@ -459,15 +398,9 @@ const MainModulosImp = () => {
     if (!search) return options;
     
     return options.filter(option => {
-      if (field === 'persona_id') {
-        return formatFullName(option).toLowerCase().includes(search) ||
-               option.ci?.toLowerCase().includes(search);
-      } else if (field === 'modulo_id') {
+      if (field === 'modulo_id') {
         const moduloText = `${option.nombre} ${option.curso?.nombre || ''}`;
         return moduloText.toLowerCase().includes(search);
-      } else if (field === 'aula_id') {
-        const aulaText = `${option.numero_aula} ${option.sucursal?.alias || 'Sin sucursal'}`;
-        return aulaText.toLowerCase().includes(search);
       } else if (field === 'horario_id') {
         const horarioText = `${formatTime(option.hora_inicio)} - ${formatTime(option.hora_fin)}`;
         return horarioText.toLowerCase().includes(search);
@@ -483,15 +416,9 @@ const MainModulosImp = () => {
     const value = formData[field];
     if (!value) return '';
     
-    if (field === 'persona_id') {
-      const teacher = teachers.find(t => t.id == value);
-      return teacher ? formatFullName(teacher) : '';
-    } else if (field === 'modulo_id') {
+    if (field === 'modulo_id') {
       const modulo = modulos.find(m => m.id == value);
       return modulo ? `${modulo.nombre} (${modulo.curso?.nombre || 'Sin curso'})` : '';
-    } else if (field === 'aula_id') {
-      const aula = classrooms.find(a => a.id == value);
-      return aula ? `${aula.numero_aula} (${aula.sucursal?.alias || 'Sin sucursal'})` : '';
     } else if (field === 'horario_id') {
       const horario = horarios.find(h => h.id == value);
       return horario ? `${formatTime(horario.hora_inicio)} - ${formatTime(horario.hora_fin)}` : '';
@@ -536,23 +463,10 @@ const MainModulosImp = () => {
                     className={`dropdown-item ${formData[field] == option.id ? 'selected' : ''}`}
                     onClick={() => handleSelectChange(field, option.id)}
                   >
-                    {field === 'persona_id' && (
-                      <div className="option-content">
-                        <strong>{formatFullName(option)}</strong>
-                        <small>CI: {option.ci}</small>
-                      </div>
-                    )}
                     {field === 'modulo_id' && (
                       <div className="option-content">
                         <strong>{option.nombre}</strong>
                         <small>{option.curso?.nombre || 'Sin curso'}</small>
-                      </div>
-                    )}
-                    {field === 'aula_id' && (
-                      <div className="option-content">
-                        <strong>{option.numero_aula}</strong>
-                        <small>{option.sucursal?.alias || 'Sin sucursal'}</small>
-                        {option.capacidad && <small>Cap: {option.capacidad}</small>}
                       </div>
                     )}
                     {field === 'horario_id' && (
@@ -580,8 +494,6 @@ const MainModulosImp = () => {
     </div>
   );
 
-  
-
   return (
     <Layout headerVariant="admin" pageSubtitle="Gestión de Módulos Impartidos">
       <div className="main-modulos-page">
@@ -594,24 +506,28 @@ const MainModulosImp = () => {
           )}
 
           <div className="page-header">
-            <h2>Gestión de Módulos Impartidos</h2>
-            <p className="page-subtitle">Administra los módulos que se imparten en el sistema</p>
+            <h2>📚 Gestión de Módulos Impartidos</h2>
+            <p className="page-subtitle">Crea y administra módulos académicos básicos</p>
           </div>
 
           <div className="form-section">
             <div className="form-card">
               <div className="form-card-header">
-                <h3>Agregar Nuevo Módulo Impartido</h3>
-                <div className="form-subtitle">Complete todos los campos para asignar un módulo</div>
+                <h3>➕ Crear Nuevo Módulo</h3>
+                <div className="form-subtitle">
+                  Todos los campos son <strong>obligatorios</strong>. 
+                  <br />
+                  <small className="note-text">
+                    💡 Nota: El docente y aula se asignarán después desde "Asignación de Horarios"
+                  </small>
+                </div>
               </div>
               
               <form onSubmit={handleAddModule} className="add-module-form">
                 <div className="form-grid">
-                  {renderDropdown('persona_id', 'Docente', teachers)}
                   {renderDropdown('modulo_id', 'Módulo', modulos)}
-                  {renderDropdown('aula_id', 'Aula', classrooms)}
-                  {renderDropdown('horario_id', 'Horario', horarios)}
                   {renderDropdown('bimestre_id', 'Bimestre', bimestres)}
+                  {renderDropdown('horario_id', 'Horario', horarios)}
                 </div>
 
                 <div className="form-buttons">
@@ -623,12 +539,10 @@ const MainModulosImp = () => {
                     {formLoading ? (
                       <>
                         <span className="spinner"></span>
-                        Procesando...
+                        Creando...
                       </>
                     ) : (
-                      <>
-                        Agregar Módulo Impartido
-                      </>
+                      '➕ Crear Módulo'
                     )}
                   </button>
                   <button 
@@ -637,7 +551,7 @@ const MainModulosImp = () => {
                     className="btn-secondary"
                     disabled={formLoading}
                   >
-                    Limpiar
+                    🔄 Limpiar
                   </button>
                 </div>
               </form>
@@ -647,7 +561,17 @@ const MainModulosImp = () => {
           <div className="modules-section">
             <div className="form-card">
               <div className="form-card-header">
-                <h3>Módulos Impartidos Existentes</h3>
+                <h3>📋 Módulos Existentes</h3>
+                <div className="module-count">
+                  Total: {modulesImpartidos.length} | Mostrando: {filteredModules.length}
+                  <button 
+                    onClick={() => navigate('/admin/schedule/edit')}
+                    className="btn-small assign-btn"
+                    style={{ marginLeft: '15px' }}
+                  >
+                    📅 Ir a Asignación
+                  </button>
+                </div>
               </div>
 
               <div className="search-bar">
@@ -658,12 +582,9 @@ const MainModulosImp = () => {
                     onChange={handleSearchChange}
                     onKeyPress={handleKeyPress}
                     className="search-input"
-                    placeholder="Buscar por docente, módulo, curso, aula, sucursal, horario, bimestre o ID..."
+                    placeholder="Buscar por módulo, curso, horario, bimestre, docente o ID..."
                     disabled={loading}
                   />
-                </div>
-                <div className="search-buttons">
-                  
                 </div>
               </div>
 
@@ -682,18 +603,18 @@ const MainModulosImp = () => {
                 {loading ? (
                   <div className="loading-container">
                     <div className="loading-spinner"></div>
-                    <p>Cargando módulos impartidos...</p>
+                    <p>Cargando módulos...</p>
                   </div>
                 ) : filteredModules.length === 0 ? (
                   <div className="empty-state">
                     <div className="icon">📭</div>
                     <h4>
-                      {searchTerm ? 'No se encontraron resultados' : 'No hay módulos impartidos registrados'}
+                      {searchTerm ? 'No se encontraron resultados' : 'No hay módulos registrados'}
                     </h4>
                     <p>
                       {searchTerm 
                         ? `No hay coincidencias para "${searchTerm}". Intenta con otros términos.`
-                        : 'Comienza agregando un nuevo módulo impartido usando el formulario superior'}
+                        : 'Comienza creando un nuevo módulo usando el formulario superior'}
                     </p>
                     {searchTerm && (
                       <button 
@@ -701,7 +622,7 @@ const MainModulosImp = () => {
                         className="btn-secondary"
                         style={{ marginTop: '15px' }}
                       >
-                        🔄 Mostrar todos los módulos
+                        🔄 Mostrar todos
                       </button>
                     )}
                   </div>
@@ -715,10 +636,9 @@ const MainModulosImp = () => {
                           <th>Módulo</th>
                           <th>Curso</th>
                           <th>Aula</th>
-                          <th>Sucursal</th>
                           <th>Horario</th>
                           <th>Bimestre</th>
-                          <th>Registro</th>
+                          <th>Estado</th>
                           <th>Acciones</th>
                         </tr>
                       </thead>
@@ -727,32 +647,39 @@ const MainModulosImp = () => {
                           <tr key={modulo.id}>
                             <td className="id-cell">{modulo.id}</td>
                             <td className="docente-cell">
-                              <strong>{formatFullName(modulo.persona)}</strong>
-                              <br />
-                              <small>{modulo.persona?.ci}</small>
+                              {modulo.persona ? (
+                                <>
+                                  <strong>{formatFullName(modulo.persona)}</strong>
+                                  <br />
+                                  <small>{modulo.persona?.ci}</small>
+                                </>
+                              ) : (
+                                <span className="no-assigned warning">Sin docente</span>
+                              )}
                             </td>
                             <td>{modulo.modulo?.nombre}</td>
                             <td className="curso-cell">
                               <span className="curso-tag">{modulo.modulo?.curso?.nombre || 'Sin curso'}</span>
                             </td>
                             <td>
-                              <div className="aula-info">
-                                <strong>{modulo.aula?.numero_aula || 'Sin aula'}</strong>
-                                <br />
-                                <small>Cap: {modulo.aula?.capacidad || 'N/A'}</small>
-                              </div>
-                            </td>
-                            <td>
-                              <span className="sucursal-tag">
-                                {modulo.aula?.sucursal?.alias || 'Sin sucursal'}
-                              </span>
+                              {modulo.aula ? (
+                                <div className="aula-info">
+                                  <strong>{modulo.aula?.numero_aula || 'Sin aula'}</strong>
+                                </div>
+                              ) : (
+                                <span className="no-assigned warning">Sin aula</span>
+                              )}
                             </td>
                             <td className="horario-cell">
-                              <div className="time-slot">
-                                {formatTime(modulo.horario?.hora_inicio) || 'N/A'} 
-                                <span className="time-separator">→</span>
-                                {formatTime(modulo.horario?.hora_fin) || 'N/A'}
-                              </div>
+                              {modulo.horario ? (
+                                <div className="time-slot">
+                                  {formatTime(modulo.horario?.hora_inicio) || 'N/A'} 
+                                  <span className="time-separator">→</span>
+                                  {formatTime(modulo.horario?.hora_fin) || 'N/A'}
+                                </div>
+                              ) : (
+                                <span className="no-assigned">Sin horario</span>
+                              )}
                             </td>
                             <td>
                               <div className="bimestre-info">
@@ -761,8 +688,16 @@ const MainModulosImp = () => {
                                 <small>{formatDate(modulo.bimestre?.fecha_inicio) || 'N/A'}</small>
                               </div>
                             </td>
-                            <td className="date-cell">
-                              {formatDate(modulo.created_at)}
+                            <td>
+                              {modulo.persona_id && modulo.aula_id ? (
+                                <span className="status-tag complete">Completo</span>
+                              ) : modulo.persona_id ? (
+                                <span className="status-tag partial">Sin aula</span>
+                              ) : modulo.aula_id ? (
+                                <span className="status-tag partial">Sin docente</span>
+                              ) : (
+                                <span className="status-tag empty">Pendiente</span>
+                              )}
                             </td>
                             <td>
                               <div className="action-buttons">
@@ -789,6 +724,18 @@ const MainModulosImp = () => {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+
+          <div className="info-section">
+            <div className="info-card">
+              <h4>📋 Flujo de Trabajo Recomendado</h4>
+              <ol>
+                <li><strong>Paso 1:</strong> Crear módulo aquí (solo requiere Módulo, Horario y Bimestre)</li>
+                <li><strong>Paso 2:</strong> Ir a "Asignación de Horarios" para asignar docente y aula</li>
+                <li><strong>Paso 3:</strong> Verificar que el módulo tenga todos los datos (docente, aula, horario)</li>
+                <li><strong>Paso 4:</strong> Los estudiantes pueden inscribirse en módulos completos</li>
+              </ol>
             </div>
           </div>
         </div>

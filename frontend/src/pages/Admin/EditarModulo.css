@@ -1,0 +1,367 @@
+/* EditarModulo.css */
+
+.editar-modulo-page {
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+.content-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Header de página */
+.page-header {
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.page-header h2 {
+  color: #1e293b;
+  font-size: 28px;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-subtitle {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Layout principal */
+.main-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+@media (max-width: 1024px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Form Card - Usado de MainModulosImp.css */
+.form-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.form-card-header {
+  background: linear-gradient(135deg, #17409c 0%, #1b53a8 100%);
+  color: white;
+  padding: 20px 25px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.form-card-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Información en grid */
+.info-grid {
+  padding: 25px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #475569;
+  font-size: 14px;
+}
+
+.info-value {
+  color: #1e293b;
+  font-size: 15px;
+  text-align: right;
+  max-width: 60%;
+  word-break: break-word;
+}
+
+/* Estadísticas */
+.stats-section .form-card {
+  height: fit-content;
+}
+
+.students-count {
+  text-align: center;
+  padding: 25px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.count-label {
+  color: #64748b;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.count-number {
+  font-size: 48px;
+  font-weight: 700;
+  color: #17409c;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.count-text {
+  color: #94a3b8;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.capacity-info {
+  padding: 25px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.capacity-label {
+  color: #64748b;
+  font-size: 14px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.capacity-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.capacity-item {
+  text-align: center;
+  padding: 15px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.capacity-number {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 5px;
+}
+
+.capacity-text {
+  color: #64748b;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.availability-status {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+  display: inline-block;
+  margin-bottom: 5px;
+}
+
+.availability-status.disponible {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.availability-status.ocupado {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* Botón de lista de estudiantes */
+.students-list-btn {
+  width: calc(100% - 50px);
+  margin: 25px;
+}
+
+/* Botones de acción */
+.action-buttons {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  padding-top: 25px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.action-buttons button {
+  min-width: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Botones - Usados de MainModulosImp.css */
+.btn-primary,
+.btn-secondary {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #17409c 0%, #1b53a8 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #1b53a8 0%, #17409c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(23, 64, 156, 0.2);
+}
+
+.btn-secondary {
+  background: #f1f5f9;
+  color: #475569;
+  border: 2px solid #e2e8f0;
+}
+
+.btn-secondary:hover {
+  background: #e2e8f0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Componentes compartidos - Usados de MainModulosImp.css */
+.sucursal-tag {
+  background: #f0f9ff;
+  color: #0c4a6e;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #bae6fd;
+  display: inline-block;
+}
+
+.time-slot {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #334155;
+  display: inline-block;
+}
+
+/* Mensajes de alerta */
+.alert {
+  padding: 15px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  animation: fadeIn 0.3s ease;
+}
+
+.alert-success {
+  background-color: #d1fae5;
+  color: #065f46;
+  border-left: 4px solid #10b981;
+}
+
+.alert-error {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border-left: 4px solid #ef4444;
+}
+
+/* Loading state */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.loading-spinner {
+  border: 4px solid #f1f5f9;
+  border-top: 4px solid #17409c;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .content-container {
+    padding: 15px;
+  }
+  
+  .page-header h2 {
+    font-size: 24px;
+  }
+  
+  .info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .info-value {
+    max-width: 100%;
+    text-align: left;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .action-buttons button {
+    width: 100%;
+  }
+  
+  .capacity-grid {
+    grid-template-columns: 1fr;
+  }
+}

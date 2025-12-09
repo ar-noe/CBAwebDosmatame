@@ -784,3 +784,41 @@
   animation: spin 1s ease-in-out infinite;
   margin-right: 8px;
 }
+
+/* Agrega al final de tu archivo CSS */
+
+/* Estilos para campos opcionales */
+.optional-label {
+  color: #94a3b8;
+  font-weight: normal;
+  font-size: 12px;
+  margin-left: 5px;
+}
+
+/* Estilos para elementos no asignados */
+.no-assigned {
+  color: #94a3b8;
+  font-style: italic;
+  font-size: 13px;
+  display: inline-block;
+  padding: 4px 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+/* Estilos para la opción "Ninguno" en dropdown */
+.dropdown-item:first-child {
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 5px;
+}
+
+/* Contador de módulos */
+.module-count {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 5px;
+  display: inline-block;
+}

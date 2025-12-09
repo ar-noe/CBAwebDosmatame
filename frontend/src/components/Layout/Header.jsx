@@ -148,12 +148,7 @@ const Header = ({ variant = 'default', subtitle = '' }) => {
                 >
                   Módulos
                 </Link>
-                <Link 
-                  to="/admin/classrooms" 
-                  className={`nav-option ${activeMenu === 'classrooms' ? 'active' : ''}`}
-                >
-                  Aulas
-                </Link>
+                
                 <Link 
                   to="/admin/schedule/edit" 
                   className={`nav-option ${activeMenu === 'schedules' ? 'active' : ''}`}
@@ -199,13 +194,7 @@ const Header = ({ variant = 'default', subtitle = '' }) => {
               </>
             )}
             
-            {/* Opción común para todos los usuarios autenticados */}
-            <Link 
-              to="/profile" 
-              className={`nav-option ${activeMenu === 'profile' ? 'active' : ''}`}
-            >
-              Mi Perfil
-            </Link>
+         
             
             {/* Info usuario y logout */}
             <div className="user-actions">
