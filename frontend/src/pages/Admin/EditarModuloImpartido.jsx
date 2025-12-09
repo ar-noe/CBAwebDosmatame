@@ -9,8 +9,6 @@ const EditarModuloImpartido = () => {
   
   const [formData, setFormData] = useState({
     modulo_id: '',
-    aula_id: '',
-    persona_id: '',
     horario_id: '',
     bimestre_id: ''
   });
@@ -19,33 +17,25 @@ const EditarModuloImpartido = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   
-  const [teachers, setTeachers] = useState([]);
   const [modules, setModules] = useState([]);
-  const [classrooms, setClassrooms] = useState([]);
   const [bimestres, setBimestres] = useState([]);
   const [horarios, setHorarios] = useState([]);
   const [currentInfo, setCurrentInfo] = useState('');
   
   const [showDropdown, setShowDropdown] = useState({
-    docente: false,
     modulo: false,
-    aula: false,
     horario: false,
     bimestre: false
   });
   
   const [dropdownSearch, setDropdownSearch] = useState({
-    docente: '',
     modulo: '',
-    aula: '',
     horario: '',
     bimestre: ''
   });
 
   const dropdownRefs = {
-    docente: useRef(null),
     modulo: useRef(null),
-    aula: useRef(null),
     horario: useRef(null),
     bimestre: useRef(null)
   };
@@ -70,39 +60,27 @@ const EditarModuloImpartido = () => {
     loadModuleData();
   }, [id]);
 
-  // FUNCIÓN PARA PROCESAR RESPUESTAS DE API - MISM QUE EN MainModulosImp
   const handleApiResponse = (data) => {
     console.log('handleApiResponse - Datos recibidos:', data);
     
-    // Si la respuesta tiene la estructura { data: [...], message: ... }
     if (data && data.data) {
-      // Si data.data es un array, devolverlo directamente
       if (Array.isArray(data.data)) {
-        console.log('Devolviendo data.data (array):', data.data.length);
         return data.data;
       }
-      // Si es un objeto, devolverlo como array con un elemento
-      console.log('Devolviendo [data.data] (objeto):', data.data);
       return [data.data];
     }
     
-    // Si es directamente un array
     if (Array.isArray(data)) {
-      console.log('Devolviendo data (array directo):', data.length);
       return data;
     }
     
-    // Si es un objeto con otra estructura
     if (typeof data === 'object' && data !== null) {
-      // Buscar arrays dentro del objeto
       const arrays = Object.values(data).filter(Array.isArray);
       if (arrays.length > 0) {
-        console.log('Encontrado array en objeto:', arrays[0].length);
         return arrays[0];
       }
     }
     
-    console.log('No se encontraron datos válidos, devolviendo []');
     return [];
   };
 
@@ -111,20 +89,8 @@ const EditarModuloImpartido = () => {
       const token = localStorage.getItem('token');
       console.log('Cargando datos iniciales...');
       
-      const [personasRes, classroomsRes, bimestresRes, modulosRes, horariosRes] = 
+      const [bimestresRes, modulosRes, horariosRes] = 
         await Promise.all([
-          fetch('http://localhost:8000/api/personas', {
-            headers: { 
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/json'
-            }
-          }),
-          fetch('http://localhost:8000/api/aulas?include=sucursal', {
-            headers: { 
-              'Authorization': `Bearer ${token}`,
-              'Accept': 'application/json'
-            }
-          }),
           fetch('http://localhost:8000/api/bimestres', {
             headers: { 
               'Authorization': `Bearer ${token}`,
@@ -145,29 +111,7 @@ const EditarModuloImpartido = () => {
           })
         ]);
 
-      // PERSONAS (Docentes)
-      if (personasRes.ok) {
-        const personasData = await personasRes.json();
-        console.log('Personas RAW:', personasData);
-        const processedData = handleApiResponse(personasData);
-        console.log('Personas procesadas:', processedData);
-        setTeachers(processedData || []);
-      } else {
-        console.error('Error en personas:', await personasRes.text());
-      }
-
-      // AULAS
-      if (classroomsRes.ok) {
-        const classroomsData = await classroomsRes.json();
-        console.log('Aulas RAW:', classroomsData);
-        const processedData = handleApiResponse(classroomsData);
-        console.log('Aulas procesadas:', processedData);
-        setClassrooms(processedData || []);
-      } else {
-        console.error('Error en aulas:', await classroomsRes.text());
-      }
-
-      // BIMESTRES - ESTE ES EL QUE NO SE MUESTRA
+      // BIMESTRES
       if (bimestresRes.ok) {
         const bimestresData = await bimestresRes.json();
         console.log('Bimestres RAW:', bimestresData);
@@ -223,20 +167,15 @@ const EditarModuloImpartido = () => {
         const result = await response.json();
         console.log('Módulo RAW:', result);
         
-        // Procesar con handleApiResponse
         const processedData = handleApiResponse(result);
         console.log('Módulo procesado:', processedData);
         
         if (processedData && processedData[0]) {
           const data = processedData[0];
           console.log('Datos del módulo:', data);
-          console.log('Bimestre del módulo:', data.bimestre);
-          console.log('Bimestre ID:', data.bimestre_id);
           
           setFormData({
             modulo_id: data.modulo_id || '',
-            aula_id: data.aula_id || '',
-            persona_id: data.persona_id || '',
             horario_id: data.horario_id || '',
             bimestre_id: data.bimestre_id || ''
           });
@@ -245,9 +184,9 @@ const EditarModuloImpartido = () => {
           const info = [
             `Módulo: ${data.modulo?.nombre || 'N/A'}`,
             `Curso: ${data.modulo?.curso?.nombre || 'Sin curso'}`,
-            `Docente: ${formatFullName(data.persona) || 'N/A'}`,
-            `Aula: ${data.aula?.numero_aula || 'N/A'}`,
-            `Sucursal: ${data.aula?.sucursal?.alias || 'Sin sucursal'}`,
+            `Docente: ${formatFullName(data.persona) || 'Sin asignar'}`,
+            `Aula: ${data.aula?.numero_aula || 'Sin asignar'} (${data.aula?.sucursal?.alias || 'Sin sucursal'})`,
+            `Horario: ${formatTime(data.horario?.hora_inicio) || 'N/A'} - ${formatTime(data.horario?.hora_fin) || 'N/A'}`,
             `Bimestre: ${data.bimestre?.nombre || 'Sin bimestre'} (${formatDate(data.bimestre?.fecha_inicio) || ''} - ${formatDate(data.bimestre?.fecha_fin) || ''})`
           ];
           setCurrentInfo(info.join(' | '));
@@ -304,11 +243,12 @@ const EditarModuloImpartido = () => {
       setFormLoading(true);
       const token = localStorage.getItem('token');
       
-      const requiredFields = ['modulo_id', 'aula_id', 'persona_id', 'bimestre_id'];
+      // Solo 3 campos obligatorios
+      const requiredFields = ['modulo_id', 'horario_id', 'bimestre_id'];
       const missingFields = requiredFields.filter(field => !formData[field]);
       
       if (missingFields.length > 0) {
-        showMessage('error', 'Por favor complete todos los campos requeridos');
+        showMessage('error', 'Por favor complete todos los campos obligatorios');
         return;
       }
       
@@ -325,16 +265,16 @@ const EditarModuloImpartido = () => {
       const data = await response.json();
       
       if (response.ok) {
-        showMessage('success', '✅ Módulo impartido actualizado exitosamente');
+        showMessage('success', 'Módulo impartido actualizado exitosamente');
         setTimeout(() => {
           navigate('/admin/modules');
         }, 1500);
       } else {
-        showMessage('error', data.message || '❌ Error al actualizar módulo impartido');
+        showMessage('error', data.message || 'Error al actualizar módulo impartido');
       }
     } catch (error) {
       console.error('Error:', error);
-      showMessage('error', '❌ Error de conexión al servidor');
+      showMessage('error', 'Error de conexión al servidor');
     } finally {
       setFormLoading(false);
     }
@@ -382,15 +322,9 @@ const EditarModuloImpartido = () => {
     if (!search) return options;
     
     return options.filter(option => {
-      if (field === 'persona_id') {
-        return formatFullName(option).toLowerCase().includes(search) ||
-               option.ci?.toLowerCase().includes(search);
-      } else if (field === 'modulo_id') {
+      if (field === 'modulo_id') {
         const moduloText = `${option.nombre} ${option.curso?.nombre || ''}`;
         return moduloText.toLowerCase().includes(search);
-      } else if (field === 'aula_id') {
-        const aulaText = `${option.numero_aula} ${option.sucursal?.alias || 'Sin sucursal'}`;
-        return aulaText.toLowerCase().includes(search);
       } else if (field === 'horario_id') {
         const horarioText = `${formatTime(option.hora_inicio)} - ${formatTime(option.hora_fin)}`;
         return horarioText.toLowerCase().includes(search);
@@ -404,64 +338,22 @@ const EditarModuloImpartido = () => {
 
   const getSelectedValue = (field) => {
     const value = formData[field];
-    console.log(`getSelectedValue para ${field}:`, value);
+    if (!value) return '';
     
-    if (!value) {
-      console.log(`Valor vacío para ${field}, devolviendo ''`);
-      return '';
-    }
-    
-    if (field === 'persona_id') {
-      const teacher = teachers.find(t => t.id == value);
-      console.log('Teacher encontrado:', teacher);
-      return teacher ? formatFullName(teacher) : '';
-    } else if (field === 'modulo_id') {
+    if (field === 'modulo_id') {
       const modulo = modules.find(m => m.id == value);
-      console.log('Módulo encontrado:', modulo);
       return modulo ? `${modulo.nombre} (${modulo.curso?.nombre || 'Sin curso'})` : '';
-    } else if (field === 'aula_id') {
-      const aula = classrooms.find(a => a.id == value);
-      console.log('Aula encontrada:', aula);
-      return aula ? `${aula.numero_aula} (${aula.sucursal?.alias || 'Sin sucursal'})` : '';
     } else if (field === 'horario_id') {
       const horario = horarios.find(h => h.id == value);
-      console.log('Horario encontrado:', horario);
       return horario ? `${formatTime(horario.hora_inicio)} - ${formatTime(horario.hora_fin)}` : '';
     } else if (field === 'bimestre_id') {
       const bimestre = bimestres.find(b => b.id == value);
-      console.log('Bimestre encontrado:', bimestre);
-      console.log('Todos los bimestres:', bimestres);
       return bimestre ? `${bimestre.nombre} (${formatDate(bimestre.fecha_inicio)} - ${formatDate(bimestre.fecha_fin)})` : '';
     }
     return '';
   };
 
-  // AGREGAR FUNCIÓN PARA DEBUG
-  const handleDebugClick = () => {
-    console.log('=== DEBUG EditarModuloImpartido ===');
-    console.log('Bimestres:', bimestres);
-    console.log('Total bimestres:', bimestres.length);
-    console.log('Teachers:', teachers.length);
-    console.log('Modules:', modules.length);
-    console.log('Classrooms:', classrooms.length);
-    console.log('Horarios:', horarios.length);
-    console.log('Form Data:', formData);
-    console.log('Bimestre ID en formData:', formData.bimestre_id);
-    
-    if (bimestres.length > 0) {
-      console.log('Primer bimestre:', bimestres[0]);
-      console.log('Bimestres disponibles:');
-      bimestres.forEach((b, i) => {
-        console.log(`${i}: ID=${b.id}, Nombre=${b.nombre}, Fecha Inicio=${b.fecha_inicio}, Fecha Fin=${b.fecha_fin}`);
-      });
-    }
-    
-    showMessage('info', `Datos: Bimestres(${bimestres.length}), Teachers(${teachers.length}), Modules(${modules.length})`, 5000);
-  };
-
   const renderDropdown = (field, label, options) => {
-    console.log(`renderDropdown ${field}:`, options.length, 'opciones');
-    
     return (
       <div className="form-group" ref={dropdownRefs[field]}>
         <label>{label}:</label>
@@ -496,23 +388,10 @@ const EditarModuloImpartido = () => {
                       className={`dropdown-item ${formData[field] == option.id ? 'selected' : ''}`}
                       onClick={() => handleSelectChange(field, option.id)}
                     >
-                      {field === 'persona_id' && (
-                        <div className="option-content">
-                          <strong>{formatFullName(option)}</strong>
-                          <small>CI: {option.ci}</small>
-                        </div>
-                      )}
                       {field === 'modulo_id' && (
                         <div className="option-content">
                           <strong>{option.nombre}</strong>
                           <small>{option.curso?.nombre || 'Sin curso'}</small>
-                        </div>
-                      )}
-                      {field === 'aula_id' && (
-                        <div className="option-content">
-                          <strong>{option.numero_aula}</strong>
-                          <small>{option.sucursal?.alias || 'Sin sucursal'}</small>
-                          {option.capacidad && <small>Cap: {option.capacidad}</small>}
                         </div>
                       )}
                       {field === 'horario_id' && (
@@ -552,31 +431,9 @@ const EditarModuloImpartido = () => {
             </div>
           )}
 
-          {/* BOTÓN DE DEBUG */}
-          <button 
-            onClick={handleDebugClick}
-            className="debug-btn"
-            style={{
-              position: 'fixed',
-              top: '20px',
-              right: '20px',
-              background: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              zIndex: 1000,
-              fontSize: '12px',
-              fontWeight: 'bold'
-            }}
-          >
-            🔧 Debug
-          </button>
-
           <div className="page-header">
-            <h2>✏️ Editar Módulo Impartido</h2>
-            <p className="page-subtitle">Actualiza la información del módulo impartido</p>
+            <h2>Editar Módulo Impartido</h2>
+            <p className="page-subtitle">Actualiza la información básica del módulo impartido</p>
           </div>
 
           {loading ? (
@@ -590,7 +447,7 @@ const EditarModuloImpartido = () => {
               {currentInfo && (
                 <div className="current-info-card">
                   <div className="current-info-header">
-                    <h3>📋 Información Actual</h3>
+                    <h3>Información Actual del Módulo</h3>
                   </div>
                   <div className="current-info-content">
                     <p>{currentInfo}</p>
@@ -601,26 +458,29 @@ const EditarModuloImpartido = () => {
               <div className="form-section">
                 <div className="form-card">
                   <div className="form-card-header">
-                    <h3>Modificar Datos</h3>
-                    <div className="form-subtitle">Seleccione los nuevos valores para cada campo</div>
+                    <h3>Modificar Datos Básicos</h3>
+                    <div className="form-subtitle">
+                      Solo se pueden editar los datos básicos del módulo
+                      <br />
+                      <small>Los campos docente y aula se gestionan en "Asignación de Horarios"</small>
+                    </div>
                   </div>
                   
                   <form onSubmit={handleSave} className="edit-form">
                     <div className="form-grid">
-                      {renderDropdown('persona_id', 'Docente', teachers)}
                       {renderDropdown('modulo_id', 'Módulo', modules)}
-                      {renderDropdown('aula_id', 'Aula', classrooms)}
                       {renderDropdown('bimestre_id', 'Bimestre', bimestres)}
-                      {renderDropdown('horario_id', 'Horario (Opcional)', horarios)}
+                      {renderDropdown('horario_id', 'Horario', horarios)}
                     </div>
 
                     {/* Información importante */}
                     <div className="important-info">
-                      <h4>📋 Información Importante:</h4>
+                      <h4>Información Importante:</h4>
                       <ul>
-                        <li>Para asignar un horario diferente debe seleccionarlo en el campo correspondiente</li>
+                        <li>Los cambios en módulo, bimestre y horario se reflejarán inmediatamente</li>
                         <li>No se puede cambiar módulo y bimestre si hay estudiantes inscritos</li>
-                        <li>Los cambios se reflejarán inmediatamente en el sistema</li>
+                        <li>Para modificar docente o aula, use la página "Asignación de Horarios"</li>
+                        <li>Los horarios disponibles dependen de la disponibilidad del sistema</li>
                       </ul>
                     </div>
 
@@ -632,7 +492,7 @@ const EditarModuloImpartido = () => {
                         className="btn-secondary"
                         disabled={formLoading}
                       >
-                        ❌ Cancelar
+                        Cancelar
                       </button>
                       <button 
                         type="submit" 
@@ -645,7 +505,7 @@ const EditarModuloImpartido = () => {
                             Guardando...
                           </>
                         ) : (
-                          '💾 Guardar Cambios'
+                          'Guardar Cambios'
                         )}
                       </button>
                     </div>

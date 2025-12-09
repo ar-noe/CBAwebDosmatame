@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout/Layout';
 //import './EditHorarios.css';
@@ -14,9 +14,9 @@ const EditHorarios = () => {
   const [selectedModule, setSelectedModule] = useState('');
   const [selectedClassroom, setSelectedClassroom] = useState('');
   
-  // Estados para módulos ya asignados al docente
+  // Estados para módulos impartidos
+  const [allModulesImpartidos, setAllModulesImpartidos] = useState([]);
   const [assignedModules, setAssignedModules] = useState([]);
-  // Estados para módulos disponibles (sin docente)
   const [availableModules, setAvailableModules] = useState([]);
   
   // Estados de carga y mensajes
@@ -64,21 +64,32 @@ const EditHorarios = () => {
     loadInitialData();
   }, []);
 
-  // Cargar módulos asignados cuando se selecciona un docente
+  // Filtrar módulos cuando cambian los datos
   useEffect(() => {
-    if (selectedTeacher) {
-      loadTeacherAssignedModules();
-      loadAvailableModules();
-    } else {
+    if (allModulesImpartidos.length > 0 && selectedTeacher) {
+      // Módulos asignados al docente seleccionado
+      const assigned = allModulesImpartidos.filter(mod => 
+        mod.persona_id && mod.persona_id == selectedTeacher
+      );
+      setAssignedModules(assigned);
+      
+      // Módulos disponibles (sin docente) - para la tabla
+      const available = allModulesImpartidos.filter(mod => 
+        !mod.persona_id || mod.persona_id === null
+      );
+      setAvailableModules(available);
+    } else if (allModulesImpartidos.length > 0) {
+      // Si no hay docente seleccionado, mostrar todos los disponibles
+      const available = allModulesImpartidos.filter(mod => 
+        !mod.persona_id || mod.persona_id === null
+      );
+      setAvailableModules(available);
       setAssignedModules([]);
-      setAvailableModules([]);
     }
-  }, [selectedTeacher]);
+  }, [selectedTeacher, allModulesImpartidos]);
 
   // Función para procesar respuestas de API
   const handleApiResponse = (data) => {
-    console.log('Datos recibidos:', data);
-    
     if (data && data.data) {
       if (Array.isArray(data.data)) {
         return data.data;
@@ -106,35 +117,40 @@ const EditHorarios = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      // Cargar docentes (personas con rol de docente)
-      const [teachersRes, modulesRes, classroomsRes] = await Promise.all([
-        fetch('http://localhost:8000/api/personas?rol=docente', {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        }),
-        fetch('http://localhost:8000/api/modulos?include=curso', {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        }),
-        fetch('http://localhost:8000/api/aulas?include=sucursal', {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        })
-      ]);
+      // Cargar todos los datos necesarios
+      const [personasRes, modulesRes, classroomsRes, modulosImpartidosRes] = 
+        await Promise.all([
+          fetch('http://localhost:8000/api/personas', {
+            headers: { 
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json'
+            }
+          }),
+          fetch('http://localhost:8000/api/modulos?include=curso', {
+            headers: { 
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json'
+            }
+          }),
+          fetch('http://localhost:8000/api/aulas?include=sucursal', {
+            headers: { 
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json'
+            }
+          }),
+          fetch('http://localhost:8000/api/modulos_impartidos?include=modulo.curso,aula.sucursal,persona,horario,bimestre', {
+            headers: { 
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json'
+            }
+          })
+        ]);
 
       // Procesar docentes
-      if (teachersRes.ok) {
-        const teachersData = await teachersRes.json();
+      if (personasRes.ok) {
+        const teachersData = await personasRes.json();
         const processedTeachers = handleApiResponse(teachersData);
         setTeachers(processedTeachers || []);
-      } else {
-        console.error('Error en docentes:', await teachersRes.text());
       }
 
       // Procesar módulos
@@ -151,73 +167,18 @@ const EditHorarios = () => {
         setClassrooms(processedClassrooms || []);
       }
 
+      // Procesar módulos impartidos (TODOS)
+      if (modulosImpartidosRes.ok) {
+        const modulosImpartidosData = await modulosImpartidosRes.json();
+        const processedModulosImpartidos = handleApiResponse(modulosImpartidosData);
+        setAllModulesImpartidos(processedModulosImpartidos || []);
+      }
+
     } catch (error) {
       console.error('Error cargando datos iniciales:', error);
       showMessage('error', 'Error al cargar los datos iniciales');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Cargar módulos ya asignados al docente
-  const loadTeacherAssignedModules = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch(`http://localhost:8000/api/modulos_impartidos?persona_id=${selectedTeacher}&include=modulo.curso,aula.sucursal,horario`, {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        const processedData = handleApiResponse(result);
-        setAssignedModules(processedData || []);
-      } else {
-        console.error('Error cargando módulos asignados:', await response.text());
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
-
-  // Cargar módulos disponibles (sin docente asignado)
-  const loadAvailableModules = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch('http://localhost:8000/api/modulos_impartidos/disponibles', {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        const processedData = handleApiResponse(result);
-        setAvailableModules(processedData || []);
-      } else {
-        // Si el endpoint no existe, cargar todos los módulos
-        const responseAll = await fetch('http://localhost:8000/api/modulos_impartidos?include=modulo.curso,aula.sucursal,horario', {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        });
-        
-        if (responseAll.ok) {
-          const resultAll = await responseAll.json();
-          const allModules = handleApiResponse(resultAll);
-          // Filtrar módulos que no tienen docente asignado
-          const available = allModules.filter(mod => !mod.persona_id);
-          setAvailableModules(available);
-        }
-      }
-    } catch (error) {
-      console.error('Error cargando módulos disponibles:', error);
     }
   };
 
@@ -268,110 +229,77 @@ const EditHorarios = () => {
       setAssignLoading(true);
       const token = localStorage.getItem('token');
       
-      // Primero, verificar si el módulo ya existe en modulos_impartidos
-      const checkResponse = await fetch(`http://localhost:8000/api/modulos_impartidos?modulo_id=${selectedModule}`, {
-        headers: { 
+      // Buscar el módulo impartido seleccionado (selectedModule es el ID del módulo impartido)
+      const selectedModuleImpartido = allModulesImpartidos.find(mod => 
+        mod.id == selectedModule
+      );
+      
+      console.log('Módulo impartido seleccionado:', selectedModuleImpartido);
+      
+      // Si no encontramos el módulo impartido, mostrar error
+      if (!selectedModuleImpartido) {
+        showMessage('error', 'No se encontró el módulo seleccionado');
+        setAssignLoading(false);
+        return;
+      }
+      
+      // SIEMPRE actualizamos el módulo impartido existente
+      console.log('Actualizando módulo impartido ID:', selectedModuleImpartido.id);
+      
+      // Preparar los datos para actualizar - SOLO enviar los campos que vamos a cambiar
+      const updateData = {
+        persona_id: selectedTeacher,
+        aula_id: selectedClassroom
+      };
+      
+      // Verificar qué otros campos existen antes de enviarlos
+      if (selectedModuleImpartido.modulo_id) {
+        updateData.modulo_id = selectedModuleImpartido.modulo_id;
+      }
+      
+      if (selectedModuleImpartido.horario_id) {
+        updateData.horario_id = selectedModuleImpartido.horario_id;
+      }
+      
+      if (selectedModuleImpartido.bimestre_id) {
+        updateData.bimestre_id = selectedModuleImpartido.bimestre_id;
+      }
+      
+      console.log('Datos a enviar para actualización:', updateData);
+      
+      const response = await fetch(`http://localhost:8000/api/modulos_impartidos/${selectedModuleImpartido.id}`, {
+        method: 'PUT',
+        headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
           'Accept': 'application/json'
-        }
+        },
+        body: JSON.stringify(updateData)
       });
       
-      let moduleIdToUpdate = null;
+      const responseText = await response.text();
+      let data;
       
-      if (checkResponse.ok) {
-        const checkData = await checkResponse.json();
-        const processedCheck = handleApiResponse(checkData);
-        
-        if (processedCheck && processedCheck.length > 0) {
-          // El módulo ya existe en modulos_impartidos, actualizarlo
-          moduleIdToUpdate = processedCheck[0].id;
+      if (responseText) {
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          console.error('Error parseando respuesta:', e);
+          showMessage('error', 'Error en formato de respuesta del servidor');
+          return;
         }
       }
-
-      let response;
-      
-      if (moduleIdToUpdate) {
-        // Actualizar módulo existente
-        response = await fetch(`http://localhost:8000/api/modulos_impartidos/${moduleIdToUpdate}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({
-            persona_id: selectedTeacher,
-            aula_id: selectedClassroom
-          })
-        });
-      } else {
-        // Crear nuevo módulo impartido
-        // Buscar bimestre activo
-        const bimestresRes = await fetch('http://localhost:8000/api/bimestres/activo', {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        });
-        
-        let bimestreId = null;
-        
-        if (bimestresRes.ok) {
-          const bimestresData = await bimestresRes.json();
-          const processedBimestres = handleApiResponse(bimestresData);
-          if (processedBimestres && processedBimestres.length > 0) {
-            bimestreId = processedBimestres[0].id;
-          }
-        }
-        
-        // Buscar horario disponible
-        const horariosRes = await fetch('http://localhost:8000/api/horarios', {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        });
-        
-        let horarioId = null;
-        
-        if (horariosRes.ok) {
-          const horariosData = await horariosRes.json();
-          const processedHorarios = handleApiResponse(horariosData);
-          if (processedHorarios && processedHorarios.length > 0) {
-            horarioId = processedHorarios[0].id;
-          }
-        }
-
-        // Crear nuevo módulo impartido
-        response = await fetch('http://localhost:8000/api/modulos_impartidos', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({
-            modulo_id: selectedModule,
-            persona_id: selectedTeacher,
-            aula_id: selectedClassroom,
-            bimestre_id: bimestreId,
-            ...(horarioId && { horario_id: horarioId })
-          })
-        });
-      }
-
-      const data = await response.json();
       
       if (response.ok) {
         showMessage('success', '✅ Módulo asignado exitosamente al docente');
         // Recargar datos
-        loadTeacherAssignedModules();
-        loadAvailableModules();
+        await loadInitialData();
         // Limpiar selección
         setSelectedModule('');
         setSelectedClassroom('');
       } else {
-        showMessage('error', data.message || '❌ Error al asignar módulo');
+        console.error('Error en respuesta:', data);
+        showMessage('error', data?.message || data?.error || '❌ Error al asignar módulo');
       }
     } catch (error) {
       console.error('Error:', error);
@@ -381,12 +309,39 @@ const EditHorarios = () => {
     }
   };
 
-  // Desasignar módulo del docente
+  // Desasignar módulo del docente - CORREGIDO
   const handleUnassignModule = async (moduleImpartidoId) => {
     if (!window.confirm('¿Está seguro de desasignar este módulo del docente?')) return;
     
     try {
       const token = localStorage.getItem('token');
+      
+      // Buscar el módulo impartido para obtener sus datos
+      const moduleImpartido = allModulesImpartidos.find(mod => mod.id == moduleImpartidoId);
+      
+      if (!moduleImpartido) {
+        showMessage('error', 'No se encontró el módulo');
+        return;
+      }
+      
+      // Preparar datos para actualizar
+      const updateData = {
+        persona_id: null,
+        aula_id: null
+      };
+      
+      // Mantener los otros campos
+      if (moduleImpartido.modulo_id) {
+        updateData.modulo_id = moduleImpartido.modulo_id;
+      }
+      
+      if (moduleImpartido.horario_id) {
+        updateData.horario_id = moduleImpartido.horario_id;
+      }
+      
+      if (moduleImpartido.bimestre_id) {
+        updateData.bimestre_id = moduleImpartido.bimestre_id;
+      }
       
       const response = await fetch(`http://localhost:8000/api/modulos_impartidos/${moduleImpartidoId}`, {
         method: 'PUT',
@@ -395,18 +350,15 @@ const EditHorarios = () => {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          persona_id: null,
-          aula_id: null
-        })
+        body: JSON.stringify(updateData)
       });
       
       const data = await response.json();
       
       if (response.ok) {
         showMessage('success', '✅ Módulo desasignado exitosamente');
-        loadTeacherAssignedModules();
-        loadAvailableModules();
+        // Recargar datos
+        await loadInitialData();
       } else {
         showMessage('error', data.message || '❌ Error al desasignar módulo');
       }
@@ -432,9 +384,30 @@ const EditHorarios = () => {
     setDropdownSearch(prev => ({ ...prev, [field]: value }));
   };
 
-  // Filtrar opciones
+  // Filtrar opciones - CORREGIDO: Para módulo, usar módulos impartidos sin docente
   const filterOptions = (options, field) => {
     const search = dropdownSearch[field]?.toLowerCase() || '';
+    
+    // Para el campo 'module', usar módulos impartidos sin docente
+    if (field === 'module') {
+      // Filtrar módulos impartidos que NO tienen docente
+      const modulesWithoutTeacher = allModulesImpartidos.filter(mod => 
+        !mod.persona_id || mod.persona_id === null
+      );
+      
+      console.log('Módulos impartidos sin docente:', modulesWithoutTeacher.length);
+      
+      // Si no hay búsqueda, retornar todos
+      if (!search) return modulesWithoutTeacher;
+      
+      // Filtrar por búsqueda
+      return modulesWithoutTeacher.filter(mod => {
+        const moduleText = `${mod.modulo?.nombre || ''} ${mod.modulo?.curso?.nombre || ''}`;
+        return moduleText.toLowerCase().includes(search);
+      });
+    }
+    
+    // Para otros campos, aplicar búsqueda normal
     if (!search) return options;
     
     return options.filter(option => {
@@ -442,9 +415,6 @@ const EditHorarios = () => {
         const fullName = `${option.nombres} ${option.ap_pat} ${option.ap_mat || ''}`;
         return fullName.toLowerCase().includes(search) ||
                option.ci?.toLowerCase().includes(search);
-      } else if (field === 'module') {
-        const moduleText = `${option.nombre} ${option.curso?.nombre || ''}`;
-        return moduleText.toLowerCase().includes(search);
       } else if (field === 'classroom') {
         const classroomText = `${option.numero_aula} ${option.sucursal?.alias || 'Sin sucursal'}`;
         return classroomText.toLowerCase().includes(search);
@@ -453,14 +423,18 @@ const EditHorarios = () => {
     });
   };
 
-  // Obtener valor seleccionado para mostrar
+  // Obtener valor seleccionado para mostrar - CORREGIDO
   const getSelectedValue = (field) => {
     if (field === 'teacher') {
       const teacher = teachers.find(t => t.id == selectedTeacher);
       return teacher ? `${teacher.nombres} ${teacher.ap_pat} ${teacher.ap_mat || ''}`.trim() : '';
     } else if (field === 'module') {
-      const module = modules.find(m => m.id == selectedModule);
-      return module ? `${module.nombre} (${module.curso?.nombre || 'Sin curso'})` : '';
+      // Buscar en módulos impartidos
+      const moduleImpartido = allModulesImpartidos.find(m => m.id == selectedModule);
+      if (moduleImpartido) {
+        return `${moduleImpartido.modulo?.nombre || 'Módulo'} (${moduleImpartido.modulo?.curso?.nombre || 'Sin curso'})`;
+      }
+      return '';
     } else if (field === 'classroom') {
       const classroom = classrooms.find(c => c.id == selectedClassroom);
       return classroom ? `${classroom.numero_aula} (${classroom.sucursal?.alias || 'Sin sucursal'})` : '';
@@ -483,79 +457,106 @@ const EditHorarios = () => {
     }
   };
 
-  // Renderizar dropdowns personalizados
-  const renderDropdown = (field, label, options) => (
-    <div className="form-group" ref={dropdownRefs[field]}>
-      <label>{label}:</label>
-      <div className="custom-select">
-        <div 
-          className={`select-header ${showDropdown[field] ? 'active' : ''}`}
-          onClick={() => toggleDropdown(field)}
-        >
-          <span className="selected-value">
-            {getSelectedValue(field) || `-- Seleccionar ${label} --`}
-          </span>
-          <span className={`dropdown-arrow ${showDropdown[field] ? 'rotated' : ''}`}>▼</span>
-        </div>
-        
-        {showDropdown[field] && (
-          <div className="dropdown-content dropdown-overlay">
-            <div className="dropdown-search">
-              <input
-                type="text"
-                placeholder={`Buscar ${label.toLowerCase()}...`}
-                value={dropdownSearch[field]}
-                onChange={(e) => handleDropdownSearch(field, e.target.value)}
-                className="dropdown-search-input"
-                autoFocus
-              />
-            </div>
-            <div className="dropdown-list">
-              {filterOptions(options, field).length > 0 ? (
-                filterOptions(options, field).map(option => (
-                  <div
-                    key={option.id}
-                    className={`dropdown-item ${field === 'teacher' && selectedTeacher == option.id ? 'selected' : 
-                                 field === 'module' && selectedModule == option.id ? 'selected' :
-                                 field === 'classroom' && selectedClassroom == option.id ? 'selected' : ''}`}
-                    onClick={() => {
-                      if (field === 'teacher') handleTeacherSelect(option.id);
-                      else if (field === 'module') handleModuleSelect(option.id);
-                      else if (field === 'classroom') handleClassroomSelect(option.id);
-                    }}
-                  >
-                    {field === 'teacher' && (
-                      <div className="option-content">
-                        <strong>{`${option.nombres} ${option.ap_pat} ${option.ap_mat || ''}`.trim()}</strong>
-                        <small>CI: {option.ci}</small>
-                      </div>
-                    )}
-                    {field === 'module' && (
-                      <div className="option-content">
-                        <strong>{option.nombre}</strong>
-                        <small>{option.curso?.nombre || 'Sin curso'}</small>
-                      </div>
-                    )}
-                    {field === 'classroom' && (
-                      <div className="option-content">
-                        <strong>{option.numero_aula}</strong>
-                        <small>{option.sucursal?.alias || 'Sin sucursal'}</small>
-                        {option.capacidad && <small>Capacidad: {option.capacidad}</small>}
-                      </div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="dropdown-empty">
-                  No se encontraron resultados
-                </div>
-              )}
-            </div>
+  // Formatear fecha
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (e) {
+      return dateString;
+    }
+  };
+
+  // Renderizar dropdowns personalizados - CORREGIDO
+  const renderDropdown = (field, label, options) => {
+    let displayOptions = options;
+    
+    // Para el campo 'module', usar módulos impartidos sin docente
+    if (field === 'module') {
+      displayOptions = allModulesImpartidos.filter(mod => 
+        !mod.persona_id || mod.persona_id === null
+      );
+    }
+    
+    return (
+      <div className="form-group" ref={dropdownRefs[field]}>
+        <label>{label}:</label>
+        <div className="custom-select">
+          <div 
+            className={`select-header ${showDropdown[field] ? 'active' : ''}`}
+            onClick={() => toggleDropdown(field)}
+          >
+            <span className="selected-value">
+              {getSelectedValue(field) || `-- Seleccionar ${label} --`}
+            </span>
+            <span className={`dropdown-arrow ${showDropdown[field] ? 'rotated' : ''}`}>▼</span>
           </div>
-        )}
+          
+          {showDropdown[field] && (
+            <div className="dropdown-content dropdown-overlay">
+              <div className="dropdown-search">
+                <input
+                  type="text"
+                  placeholder={`Buscar ${label.toLowerCase()}...`}
+                  value={dropdownSearch[field]}
+                  onChange={(e) => handleDropdownSearch(field, e.target.value)}
+                  className="dropdown-search-input"
+                  autoFocus
+                />
+              </div>
+              <div className="dropdown-list">
+                {filterOptions(displayOptions, field).length > 0 ? (
+                  filterOptions(displayOptions, field).map(option => (
+                    <div
+                      key={option.id}
+                      className={`dropdown-item ${field === 'teacher' && selectedTeacher == option.id ? 'selected' : 
+                                   field === 'module' && selectedModule == option.id ? 'selected' :
+                                   field === 'classroom' && selectedClassroom == option.id ? 'selected' : ''}`}
+                      onClick={() => {
+                        if (field === 'teacher') handleTeacherSelect(option.id);
+                        else if (field === 'module') handleModuleSelect(option.id);
+                        else if (field === 'classroom') handleClassroomSelect(option.id);
+                      }}
+                    >
+                      {field === 'teacher' && (
+                        <div className="option-content">
+                          <strong>{`${option.nombres} ${option.ap_pat} ${option.ap_mat || ''}`.trim()}</strong>
+                          <small>CI: {option.ci}</small>
+                        </div>
+                      )}
+                      {field === 'module' && (
+                        <div className="option-content">
+                          <strong>{option.modulo?.nombre || 'Módulo'}</strong>
+                          <small>{option.modulo?.curso?.nombre || 'Sin curso'}</small>
+                          {option.aula?.numero_aula && <small>Aula: {option.aula.numero_aula}</small>}
+                        </div>
+                      )}
+                      {field === 'classroom' && (
+                        <div className="option-content">
+                          <strong>{option.numero_aula}</strong>
+                          <small>{option.sucursal?.alias || 'Sin sucursal'}</small>
+                          {option.capacidad && <small>Capacidad: {option.capacidad}</small>}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="dropdown-empty">
+                    {field === 'module' ? 'No hay módulos disponibles sin docente' : 'No se encontraron resultados'}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <Layout headerVariant="admin" pageSubtitle="Asignación de Horarios">
@@ -590,6 +591,7 @@ const EditHorarios = () => {
                   <div className="selection-form">
                     <div className="form-grid">
                       {renderDropdown('teacher', 'Docente', teachers)}
+                      {/* CAMBIO: Para módulo, pasamos modules pero renderDropdown usa allModulesImpartidos */}
                       {renderDropdown('module', 'Módulo', modules)}
                       {renderDropdown('classroom', 'Aula', classrooms)}
                     </div>
@@ -612,7 +614,7 @@ const EditHorarios = () => {
                     </div>
                     
                     <div className="info-note">
-                      <p>💡 <strong>Nota:</strong> Al asignar un módulo, se vinculará el docente seleccionado con el aula escogida.</p>
+                      <p>💡 <strong>Nota:</strong> Se mostrarán solo módulos impartidos sin docente asignado</p>
                     </div>
                   </div>
                 </div>
@@ -696,55 +698,92 @@ const EditHorarios = () => {
                 </div>
               )}
 
-              {/* Sección: Módulos Disponibles (sin docente) */}
+              {/* Sección: Módulos Disponibles (con aula pero SIN docente) */}
               <div className="card">
                 <div className="card-header">
-                  <h3>Módulos Disponibles (sin docente asignado)</h3>
+                  <h3>Módulos Disponibles para Asignar</h3>
+                  <div className="card-subtitle">
+                    <small>Módulos que tienen aula asignada pero NO tienen docente</small>
+                  </div>
                 </div>
                 <div className="table-container">
                   {availableModules.length === 0 ? (
                     <div className="empty-state">
                       <div className="icon">📚</div>
                       <h4>No hay módulos disponibles</h4>
-                      <p>Todos los módulos tienen docente asignado.</p>
+                      <p>Todos los módulos tienen docente asignado o no tienen aula asignada.</p>
+                      <div style={{ marginTop: '15px' }}>
+                        <button 
+                          onClick={() => navigate('/admin/modules')}
+                          className="btn-secondary"
+                          style={{ marginRight: '10px' }}
+                        >
+                          📚 Crear Módulos
+                        </button>
+                        <button 
+                          onClick={loadInitialData}
+                          className="btn-secondary"
+                        >
+                          🔄 Recargar
+                        </button>
+                      </div>
                     </div>
                   ) : (
-                    <table className="data-table">
-                      <thead>
-                        <tr>
-                          <th>Módulo</th>
-                          <th>Curso</th>
-                          <th>Aula</th>
-                          <th>Sucursal</th>
-                          <th>Horario</th>
-                          <th>Bimestre</th>
-                          <th>Estado</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {availableModules.map((module) => (
-                          <tr key={module.id}>
-                            <td>{module.modulo?.nombre}</td>
-                            <td>{module.modulo?.curso?.nombre || 'Sin curso'}</td>
-                            <td>{module.aula?.numero_aula || 'Sin aula'}</td>
-                            <td>{module.aula?.sucursal?.alias || 'Sin sucursal'}</td>
-                            <td>
-                              {module.horario ? (
-                                <span className="time-slot">
-                                  {formatTime(module.horario?.hora_inicio)} - {formatTime(module.horario?.hora_fin)}
-                                </span>
-                              ) : (
-                                'Sin horario'
-                              )}
-                            </td>
-                            <td>{module.bimestre?.nombre || 'Sin bimestre'}</td>
-                            <td>
-                              <span className="status-tag available">Disponible</span>
-                            </td>
+                    <>
+                      <div className="table-info">
+                        <p>Mostrando <strong>{availableModules.length}</strong> módulos disponibles</p>
+                      </div>
+                      <table className="data-table">
+                        <thead>
+                          <tr>
+                            <th>Módulo</th>
+                            <th>Curso</th>
+                            <th>Aula</th>
+                            <th>Sucursal</th>
+                            <th>Horario</th>
+                            <th>Bimestre</th>
+                            <th>Estado</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {availableModules.map((module) => (
+                            <tr key={module.id}>
+                              <td>{module.modulo?.nombre}</td>
+                              <td>{module.modulo?.curso?.nombre || 'Sin curso'}</td>
+                              <td>
+                                {module.aula ? (
+                                  <div className="aula-info">
+                                    <strong>{module.aula?.numero_aula}</strong>
+                                  </div>
+                                ) : (
+                                  <span className="no-assigned">Sin aula</span>
+                                )}
+                              </td>
+                              <td>{module.aula?.sucursal?.alias || 'Sin sucursal'}</td>
+                              <td>
+                                {module.horario ? (
+                                  <span className="time-slot">
+                                    {formatTime(module.horario?.hora_inicio)} - {formatTime(module.horario?.hora_fin)}
+                                  </span>
+                                ) : (
+                                  'Sin horario'
+                                )}
+                              </td>
+                              <td>
+                                <div className="bimestre-info">
+                                  <strong>{module.bimestre?.nombre || 'Sin bimestre'}</strong>
+                                  <br />
+                                  <small>{formatDate(module.bimestre?.fecha_inicio) || ''}</small>
+                                </div>
+                              </td>
+                              <td>
+                                <span className="status-tag available">✅ Disponible</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </>
                   )}
                 </div>
               </div>

@@ -276,16 +276,16 @@ const MainModulosImp = () => {
       }
       
       if (response.ok) {
-        showMessage('success', '✅ Módulo creado exitosamente');
+        showMessage('success', 'Módulo creado exitosamente');
         showMessage('info', 'Nota: Este módulo no tiene docente ni aula asignada. Asígnalos desde "Asignación de Horarios".', 7000);
         loadModulesImpartidos();
         handleClearForm();
       } else {
-        showMessage('error', data.message || data.error || '❌ Error al crear módulo');
+        showMessage('error', data.message || data.error || 'Error al crear módulo');
       }
     } catch (error) {
       console.error('Error:', error);
-      showMessage('error', '❌ Error de conexión al servidor');
+      showMessage('error', 'Error de conexión al servidor');
     } finally {
       setFormLoading(false);
     }
@@ -334,14 +334,14 @@ const MainModulosImp = () => {
       }
       
       if (response.ok) {
-        showMessage('success', '✅ Módulo impartido eliminado exitosamente');
+        showMessage('success', 'Módulo impartido eliminado exitosamente');
         loadModulesImpartidos();
       } else {
-        showMessage('error', data.message || '❌ Error al eliminar módulo impartido');
+        showMessage('error', data.message || 'Error al eliminar módulo impartido');
       }
     } catch (error) {
       console.error('Error:', error);
-      showMessage('error', '❌ Error de conexión al servidor');
+      showMessage('error', 'Error de conexión al servidor');
     }
   };
 
@@ -506,19 +506,18 @@ const MainModulosImp = () => {
           )}
 
           <div className="page-header">
-            <h2>📚 Gestión de Módulos Impartidos</h2>
-            <p className="page-subtitle">Crea y administra módulos académicos básicos</p>
+            <h2>Gestión de Módulos Impartidos</h2>
           </div>
 
           <div className="form-section">
             <div className="form-card">
               <div className="form-card-header">
-                <h3>➕ Crear Nuevo Módulo</h3>
+                <h3>Crear Nuevo Módulo</h3>
                 <div className="form-subtitle">
                   Todos los campos son <strong>obligatorios</strong>. 
                   <br />
                   <small className="note-text">
-                    💡 Nota: El docente y aula se asignarán después desde "Asignación de Horarios"
+                    Nota: El docente y aula se asignarán después desde "Asignación de Horarios"
                   </small>
                 </div>
               </div>
@@ -542,7 +541,7 @@ const MainModulosImp = () => {
                         Creando...
                       </>
                     ) : (
-                      '➕ Crear Módulo'
+                      'Crear Módulo'
                     )}
                   </button>
                   <button 
@@ -551,7 +550,7 @@ const MainModulosImp = () => {
                     className="btn-secondary"
                     disabled={formLoading}
                   >
-                    🔄 Limpiar
+                    Limpiar
                   </button>
                 </div>
               </form>
@@ -561,17 +560,7 @@ const MainModulosImp = () => {
           <div className="modules-section">
             <div className="form-card">
               <div className="form-card-header">
-                <h3>📋 Módulos Existentes</h3>
-                <div className="module-count">
-                  Total: {modulesImpartidos.length} | Mostrando: {filteredModules.length}
-                  <button 
-                    onClick={() => navigate('/admin/schedule/edit')}
-                    className="btn-small assign-btn"
-                    style={{ marginLeft: '15px' }}
-                  >
-                    📅 Ir a Asignación
-                  </button>
-                </div>
+                <h3>Módulos Existentes</h3>
               </div>
 
               <div className="search-bar">
@@ -622,7 +611,7 @@ const MainModulosImp = () => {
                         className="btn-secondary"
                         style={{ marginTop: '15px' }}
                       >
-                        🔄 Mostrar todos
+                        Mostrar todos
                       </button>
                     )}
                   </div>
@@ -727,17 +716,6 @@ const MainModulosImp = () => {
             </div>
           </div>
 
-          <div className="info-section">
-            <div className="info-card">
-              <h4>📋 Flujo de Trabajo Recomendado</h4>
-              <ol>
-                <li><strong>Paso 1:</strong> Crear módulo aquí (solo requiere Módulo, Horario y Bimestre)</li>
-                <li><strong>Paso 2:</strong> Ir a "Asignación de Horarios" para asignar docente y aula</li>
-                <li><strong>Paso 3:</strong> Verificar que el módulo tenga todos los datos (docente, aula, horario)</li>
-                <li><strong>Paso 4:</strong> Los estudiantes pueden inscribirse en módulos completos</li>
-              </ol>
-            </div>
-          </div>
         </div>
       </div>
     </Layout>
